@@ -32,22 +32,22 @@ public class CrawlerForIlbe extends Crawler {
 			tempOfWeb = scraper.readWebSite(mode);
 			
 			System.out.println("URL : " + scraper.getSearchUrl());
-			System.out.println("----------------- Ilbe " + nowPages + " Pages Collect Start ----------------------");
+			System.out.println("----------------- Ilbe " + nowPages + " Pages About " + target + " Collect Start ----------------------");
 			// collect sources of web pages and split sector between documents and each comments
 			if(!collectSourcesOfWebPage(tempOfWeb, sourcesOfDocumentList, sourcesOfCommentsList, mode))
 				continue;
-			System.out.println("----------------- Ilbe " + nowPages + " Pages Collect Complete ----------------------");
+			System.out.println("----------------- Ilbe " + nowPages + " Pages About " + target + " Collect Complete ----------------------");
 
 			nowPages = phaser.phase(tempOfWeb.substring(tempOfWeb.indexOf("pagination")), "</strong>", "</a>", true, true);
 		}
 		
-		System.out.println("----------------- Ilbe Pages Phase Start ----------------------");
+		System.out.println("----------------- Ilbe Pages About " + target + " Phase Start ----------------------");
 		if(mode != 3)
 		{
 			// phasing web page
 			documentList = phasePage(sourcesOfDocumentList, sourcesOfCommentsList);
 		}
-		System.out.println("----------------- Ilbe Pages Phase Complete ----------------------");
+		System.out.println("----------------- Ilbe Pages About " + target + " Phase Complete ----------------------");
 		return documentList;
 	}
 	private boolean collectSourcesOfWebPage(String sourceOfPages, ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList, int mode)
@@ -78,7 +78,7 @@ public class CrawlerForIlbe extends Crawler {
 
 			if(mode != 2){
 				System.out.println("Ilbe Page Url : " + documentUrlListOfPage.get(i));
-				System.out.println("----------------- Ilbe Comments Collect Start ----------------------");
+				System.out.println("----------------- Ilbe Comments About " + scraper.getTarget() + " Collect Start ----------------------");
 			}
 			// Phase All Comments
 			ArrayList<String> sourceOfComments = new ArrayList<String>();
@@ -92,13 +92,13 @@ public class CrawlerForIlbe extends Crawler {
 					System.out.println("Comment " + (j+1) + "/" + comPageSize + " Pages Collected");
 			}
 			if(mode != 2)
-				System.out.println("----------------- Ilbe Comments Collect Complete ----------------------");
+				System.out.println("----------------- Ilbe Comments About " + scraper.getTarget() + " Collect Complete ----------------------");
 			
 			sourcesOfCommentsList.add(sourceOfComments);
 			sourcesOfDocumentList.add(phaser.phase(sourceOfDocumentPage.substring(sourceOfDocumentPage.indexOf("<div class=\"title\">") == -1 ? 0 : sourceOfDocumentPage.indexOf("<div class=\"title\">") + "<div class=\"title\">".length()), "<div class=\"title\">", "<div class=\"tRight\">", false));
 		}
 		if(mode != 2)
-			System.out.println("----------------- Ilbe Documents Collect Complete ----------------------");
+			System.out.println("----------------- Ilbe Documents About " + scraper.getTarget() + " Collect Complete ----------------------");
 		return true;
 	}
 	private ArrayList<Document> phasePage(ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList){

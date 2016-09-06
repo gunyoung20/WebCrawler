@@ -32,22 +32,22 @@ public class CrawlerForOu extends Crawler {
 			tempOfWeb = scraper.readWebSite(mode);
 			
 			System.out.println("URL : " + scraper.getSearchUrl());
-			System.out.println("----------------- Todayhumor " + nowPages + " Pages Collect Start ----------------------");
+			System.out.println("----------------- Todayhumor " + nowPages + " Pages About " + target + " Collect Start ----------------------");
 			// collect sources of web pages and split sector between documents and each comments
 			if(!collectSourcesOfWebPage(tempOfWeb, sourcesOfDocumentList, sourcesOfCommentsList, mode))
 				continue;
-			System.out.println("----------------- Todayhumor " + nowPages + " Pages Collect Complete ----------------------");
+			System.out.println("----------------- Todayhumor " + nowPages + " Pages About " + target + " Collect Complete ----------------------");
 
 			nowPages = phaser.phase(tempOfWeb.substring(tempOfWeb.indexOf("<font size=3 color=red>")), "color=#5151FD>", "</a>", true, true);
 		}
 		
-		System.out.println("----------------- Todayhumor Pages Phase Start ----------------------");
+		System.out.println("----------------- Todayhumor Pages About " + target + " Phase Start ----------------------");
 		if(mode != 3)
 		{
 			// phasing web page
 			documentList = phasePage(sourcesOfDocumentList, sourcesOfCommentsList);
 		}
-		System.out.println("----------------- Todayhumor Pages Phase Complete ----------------------");
+		System.out.println("----------------- Todayhumor Pages About " + target + " Phase Complete ----------------------");
 		return documentList;
 	}
 	private boolean collectSourcesOfWebPage(String sourceOfPages, ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList, int mode)
@@ -72,7 +72,7 @@ public class CrawlerForOu extends Crawler {
 			// Extract Comment Page Size
 			if(mode != 2){
 				System.out.println("Todayhumor Page Url : " + urlOfPage);
-				System.out.println("----------------- Todayhumor Comments Collect Start ----------------------");
+				System.out.println("----------------- Todayhumor Comments About " + scraper.getTarget() + " Collect Start ----------------------");
 			}
 			// Phase All Comments
 			ArrayList<String> sourceOfComments = new ArrayList<String>();
@@ -86,13 +86,13 @@ public class CrawlerForOu extends Crawler {
 			sourceOfComments.addAll(tempOfSources);
 
 			if(mode != 2)
-				System.out.println("----------------- Todayhumor Comments Collect Complete ----------------------");
+				System.out.println("----------------- Todayhumor Comments About " + scraper.getTarget() + " Collect Complete ----------------------");
 			
 			sourcesOfCommentsList.add(sourceOfComments);
 			sourcesOfDocumentList.add(sourceOfDocumentPage);
 		}
 		if(mode != 2)
-			System.out.println("----------------- Todayhumor Documents Collect Complete ----------------------");
+			System.out.println("----------------- Todayhumor Documents About " + scraper.getTarget() + " Collect Complete ----------------------");
 		return true;
 	}
 	private ArrayList<Document> phasePage(ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList){

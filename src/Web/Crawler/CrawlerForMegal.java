@@ -31,11 +31,11 @@ public class CrawlerForMegal extends Crawler{
 			tempOfWeb = scraper.readWebSite(mode);
 			
 			System.out.println("URL : " + scraper.getSearchUrl());
-			System.out.println("----------------- Megalian " + nowPages + " Pages Collect About " + target + " Start ----------------------");
+			System.out.println("----------------- Megalian " + nowPages + " Pages About " + target + " Collect Start ----------------------");
 			// collect sources of web pages and split sector between documents and each comments
 			if(!collectSourcesOfWebPage(tempOfWeb, sourcesOfDocumentList, sourcesOfCommentsList, mode))
 				continue;
-			System.out.println("----------------- Megalian " + nowPages + " Pages Collect About " + target + " Complete ----------------------");
+			System.out.println("----------------- Megalian " + nowPages + " Pages About " + target + " Collect Complete ----------------------");
 
 			nowPages = phaser.phase(tempOfWeb.contains("◀ 이전")?tempOfWeb.substring(tempOfWeb.indexOf("◀ 이전")):tempOfWeb, "/search/page/", "?", true, true);
 		}
@@ -83,13 +83,13 @@ public class CrawlerForMegal extends Crawler{
 			ArrayList<String> tempOfSources = phaser.phase(sourceOfCommentsPage, "<article class=", "</article>", "<article class=", true, false);
 
 			if(mode != 2)
-				System.out.println("----------------- Megalian Comments Collect Complete ----------------------");
+				System.out.println("----------------- Megalian Comments About " + scraper.getTarget() + " Collect Complete ----------------------");
 			
 			sourcesOfCommentsList.add(tempOfSources);
 			sourcesOfDocumentList.add(sourceOfDocumentPage);
 		}
 		if(mode != 2)
-			System.out.println("----------------- Megalian Documents Collect Complete ----------------------");
+			System.out.println("----------------- Megalian Documents About " + scraper.getTarget() + " Collect Complete ----------------------");
 		return true;
 	}
 	private ArrayList<Document> phasePage(ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList){

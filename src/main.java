@@ -75,7 +75,7 @@ public class main {
 				Runtime.getRuntime().availableProcessors());
 		for(int i = 0; i < objects.length; i++)
 			for(int j = 0; j < target[i].length; j++)
-				es.execute(new ThreadMaker(objects[i], target[i][j]));
+				es.execute(new ThreadMaker(objects[i], target[i][j], 3));
 		es.shutdown();
 		
 		System.out.println("Complete End Process!!");
