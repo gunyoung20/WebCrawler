@@ -23,31 +23,31 @@ public class CrawlerForOu extends Crawler {
 		// Phase web sites from each web addresses
 		String nowPages = scraper.getPageToString();
 		
-		String tempOfWeb = scraper.readWebSite(mode);
+		String tempOfWeb;
 		
 		while(!nowPages.contains("단축키"))
 		{
 			scraper.setPage(nowPages);
-			System.out.println("URL : " + scraper.getSearchUrl());
-			System.out.println("----------------- " + nowPages + " Pages Collect Start ----------------------");
-			// collect sources of web pages and split sector between documents and each comments
-			if(!collectSourcesOfWebPage(tempOfWeb, sourcesOfDocumentList, sourcesOfCommentsList, mode))
-				continue;
-			System.out.println("----------------- " + nowPages + " Pages Collect Complete ----------------------");
-
 			// search next page number
 			tempOfWeb = scraper.readWebSite(mode);
 			
-			nowPages = phaser.phase(tempOfWeb.substring(tempOfWeb.indexOf("<a href=write.php?table= target=\"_top\">")), "color=#5151FD>", "</a>", true, true);
+			System.out.println("URL : " + scraper.getSearchUrl());
+			System.out.println("----------------- Todayhumor " + nowPages + " Pages Collect Start ----------------------");
+			// collect sources of web pages and split sector between documents and each comments
+			if(!collectSourcesOfWebPage(tempOfWeb, sourcesOfDocumentList, sourcesOfCommentsList, mode))
+				continue;
+			System.out.println("----------------- Todayhumor " + nowPages + " Pages Collect Complete ----------------------");
+
+			nowPages = phaser.phase(tempOfWeb.substring(tempOfWeb.indexOf("<font size=3 color=red>")), "color=#5151FD>", "</a>", true, true);
 		}
 		
-		System.out.println("----------------- Pages Phase Start ----------------------");
+		System.out.println("----------------- Todayhumor Pages Phase Start ----------------------");
 		if(mode != 3)
 		{
 			// phasing web page
 			documentList = phasePage(sourcesOfDocumentList, sourcesOfCommentsList);
 		}
-		System.out.println("----------------- Pages Phase Complete ----------------------");
+		System.out.println("----------------- Todayhumor Pages Phase Complete ----------------------");
 		return documentList;
 	}
 	private boolean collectSourcesOfWebPage(String sourceOfPages, ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList, int mode)
@@ -70,8 +70,10 @@ public class CrawlerForOu extends Crawler {
 			}
 						
 			// Extract Comment Page Size
-			if(mode != 2)
-				System.out.println("----------------- Comments Collect Start ----------------------");
+			if(mode != 2){
+				System.out.println("Todayhumor Page Url : " + urlOfPage);
+				System.out.println("----------------- Todayhumor Comments Collect Start ----------------------");
+			}
 			// Phase All Comments
 			ArrayList<String> sourceOfComments = new ArrayList<String>();
 			table = urlOfPage.substring(urlOfPage.indexOf("table=")+"table=".length(), urlOfPage.indexOf("&no="));
@@ -84,13 +86,13 @@ public class CrawlerForOu extends Crawler {
 			sourceOfComments.addAll(tempOfSources);
 
 			if(mode != 2)
-				System.out.println("----------------- Comments Collect Complete ----------------------");
+				System.out.println("----------------- Todayhumor Comments Collect Complete ----------------------");
 			
 			sourcesOfCommentsList.add(sourceOfComments);
 			sourcesOfDocumentList.add(sourceOfDocumentPage);
 		}
 		if(mode != 2)
-			System.out.println("----------------- Documents Collect Complete ----------------------");
+			System.out.println("----------------- Todayhumor Documents Collect Complete ----------------------");
 		return true;
 	}
 	private ArrayList<Document> phasePage(ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList){

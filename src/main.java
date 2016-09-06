@@ -28,17 +28,17 @@ public class main {
 //		FileHandler dfhForIlbe = new FileHandler("D:/정우영/JAVA/WebPhasing/FileData/Ilbe", targetList.get(Megal), ".doc");
 //		dfhForIlbe.saveDocumentList(documentsFromIlbe);
 //
-//		// 오늘의 유머
+		// 오늘의 유머
 //		CrawlerForOu OuWeb = new CrawlerForOu();
 ////		mode-0 : web phasing with collecting web sources from web site on online.
 ////		mode-1 : only phasing web sources without collecting web sources from web site on online.
 ////		mode-2 : only phasing web sources without collecting web sources from offline such as file, DB.
 ////		mode-3 : only collecting web sources from online.
-//		ArrayList<Document> documentsFromOu = OuWeb.phaseWebSite(targetList.get(Megal), 3);
+//		ArrayList<Document> documentsFromOu = OuWeb.phaseWebSite(targetList.get(Megal), 2);
 //		FileHandler dfhForOu = new FileHandler("D:/정우영/JAVA/WebPhasing/FileData/Ou", targetList.get(Ilbe), ".doc");
 //		dfhForOu.saveDocumentList(documentsFromOu);
 //		
-//		// 메갈리안
+		// 메갈리안
 //		CrawlerForMegal MegalWeb = new CrawlerForMegal();
 ////		mode-0 : web phasing with collecting web sources from web site on online.
 ////		mode-1 : only phasing web sources without collecting web sources from web site on online.
@@ -69,13 +69,13 @@ public class main {
 
 		String Ilbe = "Ilbe", Megal = "Megal", Today = "Ou";
 		String[] objects = {Ilbe, Megal, Today};
-		String[][] targets = {{Megal, Today}, {Ilbe, Today}, {Ilbe, Megal}};
+		String[][] target = {{Megal, Today}, {Ilbe, Today}, {Ilbe, Megal}};
 		
 		ExecutorService es = Executors.newFixedThreadPool(
 				Runtime.getRuntime().availableProcessors());
 		for(int i = 0; i < objects.length; i++)
-			for(int j = 0; j < targets[i].length; j++)
-				es.execute(new ThreadMaker(objects[i], targets[i][j]));
+			for(int j = 0; j < target[i].length; j++)
+				es.execute(new ThreadMaker(objects[i], target[i][j]));
 		es.shutdown();
 		
 		System.out.println("Complete End Process!!");

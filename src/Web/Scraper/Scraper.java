@@ -29,11 +29,11 @@ public class Scraper {
 	public String readWebSite(String u, int mode) {
 		String buffer = "";
 		String path = System.getProperty("user.dir") + "/WebSource/"
-		+ url.substring(url.indexOf(".")+1).substring(0, url.substring(url.indexOf(".")+1).indexOf(".")) + "/"
+		+ u.substring(u.indexOf(".")+1).substring(0, u.substring(u.indexOf(".")+1).indexOf(".")) + "/"
 		+ target;
-		String dummy = u.contains("?")?u.substring(u.indexOf("?")+1) 
-				: u.substring(u.indexOf("//")+2).substring(u.substring(u.indexOf("//")+2).indexOf("/")+1);
+		String dummy = u.substring(u.indexOf("//")+2).substring(u.substring(u.indexOf("//")+2).indexOf("/")+1);
 		dummy = dummy.replace("/", "-");
+		dummy = dummy.replace("?", "#");
 		String dummyExtension = "txt";
 		FileHandler dfh = new FileHandler("", "txt");
 		if(mode == 2)

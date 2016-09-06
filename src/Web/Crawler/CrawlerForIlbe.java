@@ -23,31 +23,31 @@ public class CrawlerForIlbe extends Crawler {
 		// Phase web sites from each web addresses
 		String nowPages = scraper.getPageToString();
 		
-		String tempOfWeb = scraper.readWebSite(mode);
+		String tempOfWeb;
 		
 		while(!nowPages.contains("다음"))
 		{
 			scraper.setPage(nowPages);
+			// search next page nowPages
+			tempOfWeb = scraper.readWebSite(mode);
+			
 			System.out.println("URL : " + scraper.getSearchUrl());
-			System.out.println("----------------- " + nowPages + " Pages Collect Start ----------------------");
+			System.out.println("----------------- Ilbe " + nowPages + " Pages Collect Start ----------------------");
 			// collect sources of web pages and split sector between documents and each comments
 			if(!collectSourcesOfWebPage(tempOfWeb, sourcesOfDocumentList, sourcesOfCommentsList, mode))
 				continue;
-			System.out.println("----------------- " + nowPages + " Pages Collect Complete ----------------------");
+			System.out.println("----------------- Ilbe " + nowPages + " Pages Collect Complete ----------------------");
 
-			// search next page number
-			tempOfWeb = scraper.readWebSite(mode);
-			
 			nowPages = phaser.phase(tempOfWeb.substring(tempOfWeb.indexOf("pagination")), "</strong>", "</a>", true, true);
 		}
 		
-		System.out.println("----------------- Pages Phase Start ----------------------");
+		System.out.println("----------------- Ilbe Pages Phase Start ----------------------");
 		if(mode != 3)
 		{
 			// phasing web page
 			documentList = phasePage(sourcesOfDocumentList, sourcesOfCommentsList);
 		}
-		System.out.println("----------------- Pages Phase Complete ----------------------");
+		System.out.println("----------------- Ilbe Pages Phase Complete ----------------------");
 		return documentList;
 	}
 	private boolean collectSourcesOfWebPage(String sourceOfPages, ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList, int mode)
@@ -76,8 +76,10 @@ public class CrawlerForIlbe extends Crawler {
 			if (comPageSection.contains("</strong>"))
 				comPageSize = Integer.valueOf(phaser.phase(comPageSection, "<strong>", "</strong>", true));
 
-			if(mode != 2)
-				System.out.println("----------------- Comments Collect Start ----------------------");
+			if(mode != 2){
+				System.out.println("Ilbe Page Url : " + documentUrlListOfPage.get(i));
+				System.out.println("----------------- Ilbe Comments Collect Start ----------------------");
+			}
 			// Phase All Comments
 			ArrayList<String> sourceOfComments = new ArrayList<String>();
 			for (int j = 0; j < comPageSize; j++) {
@@ -90,13 +92,13 @@ public class CrawlerForIlbe extends Crawler {
 					System.out.println("Comment " + (j+1) + "/" + comPageSize + " Pages Collected");
 			}
 			if(mode != 2)
-				System.out.println("----------------- Comments Collect Complete ----------------------");
+				System.out.println("----------------- Ilbe Comments Collect Complete ----------------------");
 			
 			sourcesOfCommentsList.add(sourceOfComments);
 			sourcesOfDocumentList.add(phaser.phase(sourceOfDocumentPage.substring(sourceOfDocumentPage.indexOf("<div class=\"title\">") == -1 ? 0 : sourceOfDocumentPage.indexOf("<div class=\"title\">") + "<div class=\"title\">".length()), "<div class=\"title\">", "<div class=\"tRight\">", false));
 		}
 		if(mode != 2)
-			System.out.println("----------------- Documents Collect Complete ----------------------");
+			System.out.println("----------------- Ilbe Documents Collect Complete ----------------------");
 		return true;
 	}
 	private ArrayList<Document> phasePage(ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList){

@@ -9,7 +9,7 @@ import Web.Scraper.ScraperForMegal;
 
 public class CrawlerForMegal extends Crawler{
 
-	public CrawlerForMegal(){ super("http://www.megalian.com/search?search="); }
+	public CrawlerForMegal(){ super("http://www.megalian.com/search/page/1?search=%EC%9D%BC%EB%B2%A0&sf=all"); }
 
 	public ArrayList<Document> phaseWebSite(String target, int mode)
 	{
@@ -23,29 +23,30 @@ public class CrawlerForMegal extends Crawler{
 		// Phase web sites from each web addresses
 		String nowPages = scraper.getPageToString();
 		
-		String tempOfWeb = scraper.readWebSite(mode);
-		while(tempOfWeb.contains("다음 ▶"))
+		String tempOfWeb;
+		while(!nowPages.equals(""))
 		{
 			scraper.setPage(nowPages);
+			// search next page number
+			tempOfWeb = scraper.readWebSite(mode);
+			
 			System.out.println("URL : " + scraper.getSearchUrl());
-			System.out.println("----------------- " + nowPages + " Pages Collect Start ----------------------");
+			System.out.println("----------------- Megalian " + nowPages + " Pages Collect About " + target + " Start ----------------------");
 			// collect sources of web pages and split sector between documents and each comments
 			if(!collectSourcesOfWebPage(tempOfWeb, sourcesOfDocumentList, sourcesOfCommentsList, mode))
 				continue;
-			System.out.println("----------------- " + nowPages + " Pages Collect Complete ----------------------");
+			System.out.println("----------------- Megalian " + nowPages + " Pages Collect About " + target + " Complete ----------------------");
 
-			// search next page number
-			tempOfWeb = scraper.readWebSite(mode);
 			nowPages = phaser.phase(tempOfWeb.contains("◀ 이전")?tempOfWeb.substring(tempOfWeb.indexOf("◀ 이전")):tempOfWeb, "/search/page/", "?", true, true);
 		}
 		
-		System.out.println("----------------- Pages Phase Start ----------------------");
+		System.out.println("----------------- Megalian Pages About " + target + " Phase Start ----------------------");
 		if(mode != 3)
 		{
 			// phasing web page
 			documentList = phasePage(sourcesOfDocumentList, sourcesOfCommentsList);
 		}
-		System.out.println("----------------- Pages Phase Complete ----------------------");
+		System.out.println("----------------- Megalian Pages About " + target + " Phase Complete ----------------------");
 		return documentList;
 	}
 	private boolean collectSourcesOfWebPage(String sourceOfPages, ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList, int mode)
@@ -67,8 +68,10 @@ public class CrawlerForMegal extends Crawler{
 				continue;
 			}
 			// Extract Comment Page Size
-			if(mode != 2)
-				System.out.println("----------------- Comments Collect Start ----------------------");
+			if(mode != 2){
+				System.out.println("Megalian Page Url : " + urlOfPage);
+				System.out.println("----------------- Megalian Comments About " + scraper.getTarget() + " Collect Start ----------------------");
+			}
 			// Phase All Comments
 			table = urlOfPage.substring(urlOfPage.indexOf(scraper.getUrl())+scraper.getUrl().length()+1);
 			tableId = table.substring(table.indexOf("/")+1);
@@ -80,13 +83,13 @@ public class CrawlerForMegal extends Crawler{
 			ArrayList<String> tempOfSources = phaser.phase(sourceOfCommentsPage, "<article class=", "</article>", "<article class=", true, false);
 
 			if(mode != 2)
-				System.out.println("----------------- Comments Collect Complete ----------------------");
+				System.out.println("----------------- Megalian Comments Collect Complete ----------------------");
 			
 			sourcesOfCommentsList.add(tempOfSources);
 			sourcesOfDocumentList.add(sourceOfDocumentPage);
 		}
 		if(mode != 2)
-			System.out.println("----------------- Documents Collect Complete ----------------------");
+			System.out.println("----------------- Megalian Documents Collect Complete ----------------------");
 		return true;
 	}
 	private ArrayList<Document> phasePage(ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList){
