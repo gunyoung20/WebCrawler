@@ -39,6 +39,8 @@ public class CrawlerForOu extends Crawler {
 			System.out.println("----------------- Todayhumor " + nowPages + " Pages About " + target + " Collect Complete ----------------------");
 
 			nowPages = phaser.phase(tempOfWeb.substring(tempOfWeb.indexOf("<font size=3 color=red>")), "color=#5151FD>", "</a>", true, true);
+			if(nowPages.contains("다음10개"))
+				nowPages = String.valueOf(scraper.getPage()+1);
 		}
 		
 		System.out.println("----------------- Todayhumor Pages About " + target + " Phase Start ----------------------");
