@@ -69,13 +69,13 @@ public class main {
 
 		String Ilbe = "Ilbe", Megal = "Megal", Today = "Ou";
 		String[] objects = {Ilbe, Megal, Today};
-		String[][] target = {{Megal, Today}, {Ilbe, Today}, {Ilbe, Megal}};
+		String[][] targets = {{Megal, Today}, {Ilbe, Today}, {Ilbe, Megal}};
 		
 		ExecutorService es = Executors.newFixedThreadPool(
 				Runtime.getRuntime().availableProcessors());
 		for(int i = 0; i < objects.length; i++)
-			for(int j = 0; j < target[i].length; j++)
-				es.execute(new ThreadMaker(objects[i], target[i][j]));
+			for(int j = 0; j < targets[i].length; j++)
+				es.execute(new ThreadMaker(objects[i], targets[i][j]));
 		es.shutdown();
 		
 		System.out.println("Complete End Process!!");
