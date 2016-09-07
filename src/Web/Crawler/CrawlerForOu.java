@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import Data.Comment;
 import Data.Date;
 import Data.Document;
+import Data.WebSource;
 import Web.Scraper.ScraperForOu;
 
 public class CrawlerForOu extends Crawler {
@@ -17,19 +18,19 @@ public class CrawlerForOu extends Crawler {
 		scraper.setPage(1);
 		
 		ArrayList<Document> documentList = new ArrayList<>();
-		ArrayList<String> sourcesOfDocumentList = new ArrayList<>();
-		ArrayList<ArrayList<String>> sourcesOfCommentsList = new ArrayList<>();
+		ArrayList<WebSource> sourcesOfDocumentList = new ArrayList<>();
+		ArrayList<WebSource> sourcesOfCommentsList = new ArrayList<>();
 		
 		// Phase web sites from each web addresses
 		String nowPages = scraper.getPageToString();
 		
-		String tempOfWeb;
+		WebSource tempOfWeb;
 		
 		while(!nowPages.contains("단축키"))
 		{
 			scraper.setPage(nowPages);
 			// search next page number
-			tempOfWeb = scraper.readWebSite(mode);
+			tempOfWeb = scraper.readWebPage(mode);
 			
 			System.out.println("URL : " + scraper.getSearchUrl());
 			System.out.println("----------------- Todayhumor " + nowPages + " Pages About " + target + " Collect Start ----------------------");
@@ -38,7 +39,7 @@ public class CrawlerForOu extends Crawler {
 				continue;
 			System.out.println("----------------- Todayhumor " + nowPages + " Pages About " + target + " Collect Complete ----------------------");
 
-			nowPages = phaser.phase(tempOfWeb.substring(tempOfWeb.indexOf("<font size=3 color=red>")), "color=#5151FD>", "</a>", true, true);
+			nowPages = phaser.phase(tempOfWeb.getSource().substring(tempOfWeb.getSource().indexOf("<font size=3 color=red>")), "color=#5151FD>", "</a>", true, true);
 			if(nowPages.contains("다음10개"))
 				nowPages = String.valueOf(scraper.getPage()+1);
 		}
@@ -52,19 +53,19 @@ public class CrawlerForOu extends Crawler {
 		System.out.println("----------------- Todayhumor Pages About " + target + " Phase Complete ----------------------");
 		return documentList;
 	}
-	private boolean collectSourcesOfWebPage(String sourceOfPages, ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList, int mode)
+	private boolean collectSourcesOfWebPage(WebSource sourceOfPages, ArrayList<WebSource> sourcesOfDocumentList, ArrayList<WebSource> sourcesOfCommentsList, int mode)
 	{
-		ArrayList<String> token = phaser.split(sourceOfPages, "<tr class=\"view list_tr_");
+		ArrayList<String> token = phaser.split(sourceOfPages.getSource(), "<tr class=\"view list_tr_");
 		ArrayList<String> documentUrlListOfPage = phaseDocumentUrlList(token, "<a href=", "target=", true);
 
 		// Bring web pages about each document
-		String sourceOfDocumentPage, sourceOfCommentsPage;
+		WebSource sourceOfDocumentPage, sourceOfCommentsPage;
 		String table, tableId, memoUrl, urlOfPage;
 		for (int i = 0; i < documentUrlListOfPage.size(); i++) {
 			// split part of document
 			urlOfPage = documentUrlListOfPage.get(i);
 			sourceOfDocumentPage = scraper.readWebSite(urlOfPage, mode);
-			if(sourceOfDocumentPage.contains(scraper.DeletedDocumentCode))
+			if(sourceOfDocumentPage.getSource().contains(scraper.DeletedDocumentCode))
 			{
 				System.err.println("Deleted Document!! - " + urlOfPage);
 				documentUrlListOfPage.remove(i--);
@@ -77,33 +78,28 @@ public class CrawlerForOu extends Crawler {
 				System.out.println("----------------- Todayhumor Comments About " + scraper.getTarget() + " Collect Start ----------------------");
 			}
 			// Phase All Comments
-			ArrayList<String> sourceOfComments = new ArrayList<String>();
 			table = urlOfPage.substring(urlOfPage.indexOf("table=")+"table=".length(), urlOfPage.indexOf("&no="));
 			tableId = urlOfPage.substring(urlOfPage.indexOf("&no=")+"&no=".length(), urlOfPage.indexOf("&s_no="));
 			memoUrl = "http://www.todayhumor.co.kr/board/ajax_memo_list.php?parent_table=" + table + "&parent_id="+ tableId +"&last_memo_no=0";
-			sourceOfCommentsPage = scraper.readWebSite(memoUrl, mode);
-
-			// split parts of comments
-			ArrayList<String> tempOfSources = phaser.phaseSourcesOfComments(sourceOfCommentsPage, "{", "}", "[");
-			sourceOfComments.addAll(tempOfSources);
+			sourceOfCommentsPage = scraper.readWebSite(memoUrl, "Comment", mode);
 
 			if(mode != 2)
 				System.out.println("----------------- Todayhumor Comments About " + scraper.getTarget() + " Collect Complete ----------------------");
 			
-			sourcesOfCommentsList.add(sourceOfComments);
+			sourcesOfCommentsList.add(sourceOfCommentsPage);
 			sourcesOfDocumentList.add(sourceOfDocumentPage);
 		}
 		if(mode != 2)
 			System.out.println("----------------- Todayhumor Documents About " + scraper.getTarget() + " Collect Complete ----------------------");
 		return true;
 	}
-	private ArrayList<Document> phasePage(ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList){
+	private ArrayList<Document> phasePage(ArrayList<WebSource> sourcesOfDocumentList, ArrayList<WebSource> sourcesOfCommentsList){
 
 		ArrayList<Document> documentList = new ArrayList<>();
 		// extract document
 		String ID, title, author, date, time, story, sourceOfDate, sourceOfDocument;
 		for (int i = 0; i < sourcesOfDocumentList.size(); i++) {
-			sourceOfDocument = sourcesOfDocumentList.get(i);
+			sourceOfDocument = sourcesOfDocumentList.get(i).getSource();
 			Document document = new Document();
 
 			// phasing document
@@ -145,8 +141,8 @@ public class CrawlerForOu extends Crawler {
 			
 			// phasing comments
 			String comID, comAuthor, comStory, associated, comDate, comTime;
-			ArrayList<Comment> commentList = new ArrayList<Comment>();
-			ArrayList<String> sourceList = sourcesOfCommentsList.get(i);
+			ArrayList<Comment> commentList = new ArrayList<Comment>(); 
+			ArrayList<String> sourceList = phaser.phaseSourcesOfComments(sourcesOfCommentsList.get(i).getSource(), "{", "}", "[");
 			for (int j = 0; j < sourceList.size(); j++) {
 				String sourceOfComment = sourceList.get(j).replace("\"", "");
 

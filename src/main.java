@@ -1,13 +1,5 @@
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import Data.Document;
-import Storage.FileHandler;
-import Web.Crawler.CrawlerForIlbe;
-import Web.Crawler.CrawlerForMegal;
-import Web.Crawler.CrawlerForOu;
 
 public class main {
 
@@ -27,17 +19,17 @@ public class main {
 //		ArrayList<Document> documentsFromIlbe = IlbeWeb.phaseWebSite(targetList.get(Megal), 3);
 //		FileHandler dfhForIlbe = new FileHandler("D:/정우영/JAVA/WebPhasing/FileData/Ilbe", targetList.get(Megal), ".doc");
 //		dfhForIlbe.saveDocumentList(documentsFromIlbe);
-//
+
 		// 오늘의 유머
 //		CrawlerForOu OuWeb = new CrawlerForOu();
 ////		mode-0 : web phasing with collecting web sources from web site on online.
 ////		mode-1 : only phasing web sources without collecting web sources from web site on online.
 ////		mode-2 : only phasing web sources without collecting web sources from offline such as file, DB.
 ////		mode-3 : only collecting web sources from online.
-//		ArrayList<Document> documentsFromOu = OuWeb.phaseWebSite(targetList.get(Megal), 2);
+//		ArrayList<Document> documentsFromOu = OuWeb.phaseWebSite(targetList.get(Megal), 3);
 //		FileHandler dfhForOu = new FileHandler("D:/정우영/JAVA/WebPhasing/FileData/Ou", targetList.get(Ilbe), ".doc");
 //		dfhForOu.saveDocumentList(documentsFromOu);
-//		
+		
 		// 메갈리안
 //		CrawlerForMegal MegalWeb = new CrawlerForMegal();
 ////		mode-0 : web phasing with collecting web sources from web site on online.
@@ -48,7 +40,7 @@ public class main {
 //		FileHandler dfhForMegal = new FileHandler("D:/정우영/JAVA/WebPhasing/FileData/Megal", targetList.get(Ilbe), ".doc");
 //		dfhForMegal.saveDocumentList(documentsFromMegal);
 
-//		DocumentFileHandler dfh = new DocumentFileHandler("D:/정우영/JAVA/WebPhasing/FileData/Ilbe", "Megal", ".doc");
+//		FileHandler dfh = new FileHandler("D:/정우영/JAVA/WebPhasing/FileData/Ilbe", "Megal", ".doc");
 //		ArrayList<Document> dlist = dfh.loadDocumentList();
 //		
 //		for(int i = 0; i < dlist.size(); i++)
@@ -75,8 +67,15 @@ public class main {
 				Runtime.getRuntime().availableProcessors());
 		for(int i = 0; i < objects.length; i++)
 			for(int j = 0; j < target[i].length; j++)
+//				mode-0 : web phasing with collecting web sources from web site on online.
+//				mode-1 : only phasing web sources without collecting web sources from web site on online.
+//				mode-2 : only phasing web sources without collecting web sources from offline such as file, DB.
+//				mode-3 : only collecting web sources from online.
 				es.execute(new ThreadMaker(objects[i], target[i][j], 3));
 		es.shutdown();
+		
+//		WebSourceDAO wsdao = new WebSourceDAO();
+//		System.out.println(wsdao.getSource("http://www.megalian.com/free/375666").getSource());
 		
 		System.out.println("Complete End Process!!");
 	}

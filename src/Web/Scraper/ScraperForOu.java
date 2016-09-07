@@ -1,5 +1,7 @@
 package Web.Scraper;
 
+import Data.WebSource;
+
 public class ScraperForOu extends Scraper {
 
 	public ScraperForOu(String u, String t){
@@ -18,7 +20,7 @@ public class ScraperForOu extends Scraper {
 	public String getSearchUrl(){
 		return searchUrl+getTargetName()+"&Submit.x=0&Submit.y=0&Submit=%EA%B2%80%EC%83%89&page="+page;
 	}
-	public String readWebSite(int mode) {
+	public WebSource readWebSite(int mode) {
 		return readWebSite(this.getSearchUrl(), mode);
 	}
 }

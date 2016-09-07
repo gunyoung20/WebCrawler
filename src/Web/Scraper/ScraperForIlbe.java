@@ -1,5 +1,7 @@
 package Web.Scraper;
 
+import Data.WebSource;
+
 public class ScraperForIlbe extends Scraper{
 	public ScraperForIlbe(String u, String t){
 		super(u, t); 
@@ -16,7 +18,7 @@ public class ScraperForIlbe extends Scraper{
 	public String getSearchUrl(){
 		return searchUrl+getTargetName()+"&page="+page;
 	}
-	public String readWebSite(int mode) {
+	public WebSource readWebSite(int mode) {
 		return readWebSite(this.getSearchUrl(), mode);
 	}
 }

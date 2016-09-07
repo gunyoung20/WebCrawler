@@ -1,6 +1,7 @@
 package Web;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 public class Phaser {
 
@@ -121,5 +122,24 @@ public class Phaser {
 		temp = temp.replace("<br />", "\n");
 		temp = temp.replace("&quot;", "\"");
 		return temp;
+	}
+	public int searchDigit(String strContainsDigit){
+		String digit = "", temp;
+		boolean start = false;
+		for(int i = 0; i < strContainsDigit.length(); i++)
+		{
+			temp = (i+1)>=strContainsDigit.length()?strContainsDigit.substring(i):strContainsDigit.substring(i, i+1);
+			if(Pattern.matches("^[0-9]", temp))
+			{
+				digit = digit + temp;
+				start = true;
+			}
+			else if(start)
+				break;
+		}
+		if(!start)
+			return -1;
+		
+		return Integer.valueOf(digit);
 	}
 }

@@ -5,7 +5,10 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 
+import Data.WebSource;
 import Storage.FileHandler;
+import Storage.WebSourceDAO;
+import Web.Phaser;
 
 public class Scraper {
 	public Scraper(){ this("", ""); }
@@ -14,7 +17,7 @@ public class Scraper {
 		searchUrl = s;
 		url = (s.contains("//")?s.substring(0, s.substring(s.indexOf("//")+2).indexOf("/") + s.indexOf("//") + 2):"");
 		target = t; 
-		nowTimeForCollect = new SimpleDateFormat("YYYY.MM.dd HHmmss").format(Calendar.getInstance().getTime());
+		nowTimeForCollect = new SimpleDateFormat("YYYY-MM-dd HHmmss").format(Calendar.getInstance().getTime());
 		targetList = new HashMap<String, String>();
 		targetList.put("Ilbe", "%EC%9D%BC%EB%B2%A0");
 		targetList.put("Megal", "%EB%A9%94%EA%B0%88");
@@ -25,46 +28,99 @@ public class Scraper {
 	//mode-1 : only phasing web sources without collecting web sources from web site on online.
 	//mode-2 : only phasing web sources without collecting web sources from offline such as file, DB.
 	//mode-3 : only collecting web sources from online.
-	public String readWebSite(int mode){ return readWebSite(this.getSearchUrl(), mode); }
-	public String readWebSite(String u, int mode) {
+	public WebSource readWebPage(int mode){
+		String u = getSearchUrl();
+		String sName = "Page";
+		String webName = u.substring(u.indexOf(".")+1).substring(0, u.substring(u.indexOf(".")+1).indexOf("."));
+		
+		WebSource source = new WebSource(u, url, webName, target, nowTimeForCollect);
+
 		String buffer = "";
-		String path = System.getProperty("user.dir") + "/WebSource/"
-		+ u.substring(u.indexOf(".")+1).substring(0, u.substring(u.indexOf(".")+1).indexOf(".")) + "/"
-		+ target;
-		String dummy = u.substring(u.indexOf("//")+2).substring(u.substring(u.indexOf("//")+2).indexOf("/")+1);
-		dummy = dummy.replace("/", "-");
-		dummy = dummy.replace("?", "#");
+		String path = System.getProperty("user.dir") + "/WebSource/" + webName + "/" + target;
+		String dummy = webName + "-" + target + "-" + sName;
 		String dummyExtension = "txt";
-		FileHandler dfh = new FileHandler("", "txt");
+		
+		FileHandler dfh = new FileHandler(dummy, dummyExtension);
 		if(mode == 2)
-			buffer = dfh.readWebFile(path, dummy);
+			buffer = dfh.readWebFile(u, dummy + page);
+		else
+			buffer = readWebSource(u, path, dummy);
+		if(mode == 0 || mode == 3)
+			dfh.writeWebFile(path + "/" + nowTimeForCollect, dummy + page,	buffer);
+		
+		source.setSourceName(sName);
+		source.setSource(buffer);
+		
+		return source;
+	}
+	public WebSource readWebSite(String u, int mode){ return readWebSite(getSearchUrl(), "Document", mode); }
+	public WebSource readWebSite(String u, String sName, int mode) {
+		
+		WebSourceDAO wsdao = new WebSourceDAO();
+		WebSource source = null;
+		if(mode == 2)		
+			source = wsdao.getSource(getSearchUrl());
 		else
 		{
-			while(true)
+			Phaser phaser = new Phaser();
+			String searchUrl=u, page; 
+			if(u.contains("page"))
 			{
-				try {
-					if ((new File(path)).mkdirs() == true) {
-						System.out.println("Directories : " + path + " created");
-					}
-
-					Runtime rt = Runtime.getRuntime();
-					Process p = rt
-							.exec(System.getProperty("user.dir") + "/dist/app.exe " + u + " " + dummy + " " + path);
-					p.waitFor();
-				} catch (Exception e) {
-					e.getStackTrace();
-				}
-				sleep(1200);
-				buffer = dfh.readWebFile(path, dummy, dummyExtension);
-				if(buffer.contains(WebAccessErrorCode))
-					continue;
-				break;
+				page = String.valueOf(phaser.searchDigit(u.substring(u.indexOf("page"))));
+				int peIndex = page.equals("-1") ? u.length() - 1 : u.indexOf(page) + page.length();
+				searchUrl = u.substring(0, u.indexOf("page")-1) + u.substring(peIndex);
 			}
+			
+			String webName = u.substring(u.indexOf(".")+1).substring(0, u.substring(u.indexOf(".")+1).indexOf("."));
+			
+			String buffer = "";
+			String path = System.getProperty("user.dir") + "/WebSource/" + webName + "/" + target;
+			String dummy = target + "-" + sName;
+			
+			buffer = readWebSource(searchUrl, path, dummy);
+
+			source = new WebSource(searchUrl, url, webName, target, nowTimeForCollect, sName, buffer);
 		}
 		if(mode == 0 || mode == 3)
 		{
-			dfh.writeWebFile(path + "/" + nowTimeForCollect, dummy,	buffer);
+			WebSource temp;
+			if((temp = wsdao.getSource(searchUrl)) == null)
+				wsdao.insertWebSource(source);
+			else if(!temp.getSource().equals(source.getSource()))
+				wsdao.update(temp, source);
 		}
+		
+		return source;
+	}
+	private String readWebSource(String u, String dir, String fileName){
+		String buffer = "";
+
+		String dummyExtension = "txt";
+		FileHandler dfh = new FileHandler(fileName, dummyExtension);
+		
+		while(true)
+		{
+			try {
+				if ((new File(dir)).mkdirs() == true) {
+					System.out.println("Directories : " + dir + " created");
+				}
+
+				Runtime rt = Runtime.getRuntime();
+				Process p = rt.exec(System.getProperty("user.dir") + "/dist/app.exe " + u + " " + fileName + " " + dir);
+				p.waitFor();
+			} catch (Exception e) {
+				e.getStackTrace();
+			}
+			sleep(1200);
+			buffer = dfh.readWebFile(dir, fileName);
+			if(buffer.equals("") || buffer.contains(WebAccessErrorCode))
+			{
+				System.err.println("Access Error path : " + dir + " target : " + fileName);
+				continue;
+			}
+			break;
+		}
+		
 		return buffer;
 	}
 	
@@ -94,7 +150,7 @@ public class Scraper {
 	private String nowTimeForCollect;
 	private HashMap<String, String> targetList;
 
-	public final String WebAccessErrorCode = "비정상적인 검색입니다.<br>잠시 후에 시도하세요!";
+	public final String WebAccessErrorCode = "비정상적인 검색입니다.";
 	public final String DeletedDocumentCode = "삭제된 글입니다.";
 
 	public String getSearchUrl() { return searchUrl; }

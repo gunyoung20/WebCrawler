@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import Data.Comment;
 import Data.Date;
 import Data.Document;
+import Data.WebSource;
 import Web.Scraper.ScraperForIlbe;
 
 public class CrawlerForIlbe extends Crawler {
@@ -17,19 +18,19 @@ public class CrawlerForIlbe extends Crawler {
 		scraper.setPage(1);
 		
 		ArrayList<Document> documentList = new ArrayList<>();
-		ArrayList<String> sourcesOfDocumentList = new ArrayList<>();
-		ArrayList<ArrayList<String>> sourcesOfCommentsList = new ArrayList<>();
+		ArrayList<WebSource> sourcesOfDocumentList = new ArrayList<>();
+		ArrayList<WebSource> sourcesOfCommentsList = new ArrayList<>();
 		
 		// Phase web sites from each web addresses
 		String nowPages = scraper.getPageToString();
 		
-		String tempOfWeb;
+		WebSource tempOfWeb;
 		
 		while(!nowPages.contains("다음"))
 		{
 			scraper.setPage(nowPages);
 			// search next page nowPages
-			tempOfWeb = scraper.readWebSite(mode);
+			tempOfWeb = scraper.readWebPage(mode);
 			
 			System.out.println("URL : " + scraper.getSearchUrl());
 			System.out.println("----------------- Ilbe " + nowPages + " Pages About " + target + " Collect Start ----------------------");
@@ -38,7 +39,7 @@ public class CrawlerForIlbe extends Crawler {
 				continue;
 			System.out.println("----------------- Ilbe " + nowPages + " Pages About " + target + " Collect Complete ----------------------");
 
-			nowPages = phaser.phase(tempOfWeb.substring(tempOfWeb.indexOf("pagination")), "</strong>", "</a>", true, true);
+			nowPages = phaser.phase(tempOfWeb.getSource().substring(tempOfWeb.getSource().indexOf("pagination")), "</strong>", "</a>", true, true);
 		}
 		
 		System.out.println("----------------- Ilbe Pages About " + target + " Phase Start ----------------------");
@@ -50,17 +51,17 @@ public class CrawlerForIlbe extends Crawler {
 		System.out.println("----------------- Ilbe Pages About " + target + " Phase Complete ----------------------");
 		return documentList;
 	}
-	private boolean collectSourcesOfWebPage(String sourceOfPages, ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList, int mode)
+	private boolean collectSourcesOfWebPage(WebSource sourceOfPages, ArrayList<WebSource> sourcesOfDocumentList, ArrayList<WebSource> sourcesOfCommentsList, int mode)
 	{		
-		ArrayList<String> token = phaser.split(sourceOfPages, "<td class=\"num\">");
+		ArrayList<String> token = phaser.split(sourceOfPages.getSource(), "<td class=\"num\">");
 		ArrayList<String> documentUrlListOfPage = phaseDocumentUrlList(token, "<a href=\"", "\"", true);
 
 		// Bring web pages about each document
 
 		for (int i = 0; i < documentUrlListOfPage.size(); i++) {
 			// split part of document
-			String sourceOfDocumentPage = scraper.readWebSite(documentUrlListOfPage.get(i), mode);
-			if(sourceOfDocumentPage.contains(scraper.DeletedDocumentCode))
+			WebSource sourceOfDocumentPage = scraper.readWebSite(documentUrlListOfPage.get(i), "Document", mode);
+			if(sourceOfDocumentPage.getSource().contains(scraper.DeletedDocumentCode))
 			{
 				System.err.println("Deleted Document!! - " + documentUrlListOfPage.get(i));
 				documentUrlListOfPage.remove(i--);
@@ -68,7 +69,9 @@ public class CrawlerForIlbe extends Crawler {
 			}
 						
 			// Extract Comment Page Size
-			String sourceOfCommentPageSection = sourceOfDocumentPage.substring(sourceOfDocumentPage.indexOf("class=\"pagination") == -1 ? 0 : sourceOfDocumentPage.indexOf("class=\"pagination") + "class=\"pagination".length());
+			String sourceOfCommentPageSection = sourceOfDocumentPage.getSource().substring(
+					sourceOfDocumentPage.getSource().indexOf("class=\"pagination") == -1 ? 0 : 
+						sourceOfDocumentPage.getSource().indexOf("class=\"pagination") + "class=\"pagination".length());
 			String comPageSection = "";
 			comPageSection = phaser.phase(sourceOfCommentPageSection, "</a>", "</div>", true);
 			
@@ -81,33 +84,37 @@ public class CrawlerForIlbe extends Crawler {
 				System.out.println("----------------- Ilbe Comments About " + scraper.getTarget() + " Collect Start ----------------------");
 			}
 			// Phase All Comments
-			ArrayList<String> sourceOfComments = new ArrayList<String>();
+			ArrayList<WebSource> sourceOfComments = new ArrayList<WebSource>();
+			WebSource sourceOfCommentsPage;
 			for (int j = 0; j < comPageSize; j++) {
-				sourceOfDocumentPage = scraper.readWebSite(documentUrlListOfPage.get(i) + "&cpage=" + (j+1), mode);
+				sourceOfCommentsPage = scraper.readWebSite(documentUrlListOfPage.get(i) + "&cpage=" + (j+1), "Comment", mode);
 				
 				// split parts of comments
-				ArrayList<String> tempOfSources = phaser.phase(sourceOfDocumentPage, "<div class=\"replyItem", "<div style=\"text-align", "<div class=\"replyItem", false);
-				sourceOfComments.addAll(tempOfSources);
+				sourceOfComments.add(sourceOfCommentsPage);
 				if(mode != 2)
 					System.out.println("Comment " + (j+1) + "/" + comPageSize + " Pages Collected");
 			}
 			if(mode != 2)
 				System.out.println("----------------- Ilbe Comments About " + scraper.getTarget() + " Collect Complete ----------------------");
 			
-			sourcesOfCommentsList.add(sourceOfComments);
-			sourcesOfDocumentList.add(phaser.phase(sourceOfDocumentPage.substring(sourceOfDocumentPage.indexOf("<div class=\"title\">") == -1 ? 0 : sourceOfDocumentPage.indexOf("<div class=\"title\">") + "<div class=\"title\">".length()), "<div class=\"title\">", "<div class=\"tRight\">", false));
+			sourcesOfCommentsList.addAll(sourceOfComments);
+			sourcesOfDocumentList.add(sourceOfDocumentPage);
 		}
 		if(mode != 2)
 			System.out.println("----------------- Ilbe Documents About " + scraper.getTarget() + " Collect Complete ----------------------");
 		return true;
 	}
-	private ArrayList<Document> phasePage(ArrayList<String> sourcesOfDocumentList, ArrayList<ArrayList<String>> sourcesOfCommentsList){
-
+	private ArrayList<Document> phasePage(ArrayList<WebSource> sourcesOfDocumentList, ArrayList<WebSource> sourcesOfCommentsList){
 		ArrayList<Document> documentList = new ArrayList<>();
 		// extract document
 		String ID, title, author, date, time, story, sourceOfDate, sourceOfDocument;
+		WebSource temp;
 		for (int i = 0; i < sourcesOfDocumentList.size(); i++) {
-			sourceOfDocument = sourcesOfDocumentList.get(i);
+			temp = sourcesOfDocumentList.get(i);
+			sourceOfDocument = phaser.phase(temp.getSource().substring(
+					temp.getSource().indexOf("<div class=\"title\">") == -1 ? 0 : 
+						temp.getSource().indexOf("<div class=\"title\">") + 
+						"<div class=\"title\">".length()), "<div class=\"title\">", "<div class=\"tRight\">", false);
 			Document document = new Document();
 
 			// phasing document
@@ -154,7 +161,7 @@ public class CrawlerForIlbe extends Crawler {
 			// phasing comments
 			String comID, comAuthor, comStory, associated, comDate, comTime, sourceOfCdate;
 			ArrayList<Comment> commentList = new ArrayList<Comment>();
-			ArrayList<String> sourceList = sourcesOfCommentsList.get(i);
+			ArrayList<String> sourceList = phaser.phase(sourcesOfCommentsList.get(i).getSource(), "<div class=\"replyItem", "<div style=\"text-align", "<div class=\"replyItem", false);
 			for (int j = 0; j < sourceList.size(); j++) {
 				String sourceOfComment = sourceList.get(j);
 

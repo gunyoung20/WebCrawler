@@ -5,18 +5,30 @@ public class Date {
 	public Date(){}
 	public Date(String date)
 	{
-		year = Integer.parseInt(date.substring(0, date.indexOf(".")));
-		date = date.substring(date.indexOf(".")+1);
-		month = Integer.parseInt(date.substring(0, date.indexOf(".")));
-		date = date.substring(date.indexOf(".")+1);
+		year = Integer.parseInt(date.substring(0, date.indexOf("-")));
+		date = date.substring(date.indexOf("-")+1);
+		month = Integer.parseInt(date.substring(0, date.indexOf("-")));
+		date = date.substring(date.indexOf("-")+1);
 		this.date = Integer.parseInt(date.substring(0, date.indexOf(" ")));
 		
-		date = date.substring(date.indexOf(" ")+1);
-		hours = Integer.parseInt(date.substring(0, date.indexOf(":")));
-		date = date.substring(date.indexOf(":")+1);
-		minutes = Integer.parseInt(date.substring(0, date.indexOf(":")));
-		date = date.substring(date.indexOf(":")+1);
-		seconds = Integer.parseInt(date);
+		if(date.contains(":"))
+		{
+			date = date.substring(date.indexOf(" ") + 1);
+			hours = Integer.parseInt(date.substring(0, date.indexOf(":")));
+			date = date.substring(date.indexOf(":") + 1);
+			minutes = Integer.parseInt(date.substring(0, date.indexOf(":")));
+			date = date.substring(date.indexOf(":") + 1);
+			seconds = Integer.parseInt(date.substring(0, 2));
+		}
+		else
+		{
+			date = date.substring(date.indexOf(" ") + 1);
+			hours = Integer.parseInt(date.substring(0, 2));
+			date = date.substring(2);
+			minutes = Integer.parseInt(date.substring(0, 2));
+			date = date.substring(2);
+			seconds = Integer.parseInt(date.substring(0, 2));
+		}
 	}
 	
 	public int getYear() {
@@ -58,7 +70,7 @@ public class Date {
 	
 	public String toString()
 	{
-		String temp = String.format("%4d.%02d.%02d %02d:%02d:%02d", year, month, date, hours, minutes, seconds);
+		String temp = String.format("%4d-%02d-%02d %02d:%02d:%02d", year, month, date, hours, minutes, seconds);
 		
 		return temp;
 	}

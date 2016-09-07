@@ -5,6 +5,7 @@ import Data.Date;
 
 public class Document {
 
+	private String webUrl;
 	private String titleNum;
 	private String title;
 	private String author;
@@ -17,21 +18,21 @@ public class Document {
 	private Morpheme morphemeOfTitle;
 	private ArrayList<Morpheme> morphemeOfSentence;
 	private double sentimentScore;
-	
-	public Document(){ author=""; title = ""; story = ""; commentList = null; sentenceFromStory = null; morphemeOfTitle = null; morphemeOfSentence = null; sentimentScore = 0.0; }
-	public Document(String a, String t, String s){ author=a; title = t; story = s; commentList = null; sentenceFromStory = null; morphemeOfTitle = null; morphemeOfSentence = null; sentimentScore = 0.0; }
-	public Document(String a, String t, String s, ArrayList<Comment> comment){ author=a; title = t; story = s; commentList = comment; sentenceFromStory = null; morphemeOfTitle = null; morphemeOfSentence = null; sentimentScore = 0.0; }
-	public Document(String a, String t, String s, ArrayList<Comment> comment, ArrayList<String> sSentence){ author=a; title = t; story = s; commentList = comment; sentenceFromStory = sSentence; morphemeOfTitle = null; morphemeOfSentence = null; sentimentScore = 0.0; }
-	public Document(String a, String t, String s, ArrayList<Comment> comment, ArrayList<String> sSentence, Morpheme tMorpheme, ArrayList<Morpheme> sMorpheme)
-	{ author=a; title = t; story = s; commentList = comment; sentenceFromStory = sSentence; morphemeOfTitle = tMorpheme; morphemeOfSentence = sMorpheme; sentimentScore = 0.0; }
-	public Document(String a, String t, String s, ArrayList<Comment> comment, ArrayList<String> sSentence, Morpheme tMorpheme, ArrayList<Morpheme> sMorpheme, double score)
-	{ author=a; title = t; story = s; commentList = comment; sentenceFromStory = sSentence; morphemeOfTitle = tMorpheme; morphemeOfSentence = sMorpheme; sentimentScore = score; }
 
-	public void setAuthor(String a){ author = a; }
-	public void setTitle(String t){ title = t; }
-	public void setStory(String s){ story = s; }
-	public void setDate(Date d){ date = d; }
+	public Document(){ this("", "", "", "", "", ""); }
+	public Document(String webUrl, String titleNum, String title, String author, String date, String story)	{
+		this(webUrl, titleNum, title, author, date.equals("")?null:new Date(date), story);	}
+	public Document(String webUrl, String titleNum, String title, String author, Date date, String story)	{
+		this.webUrl = webUrl; this.titleNum = titleNum; this.title = title; this.author = author; 
+		this.date = date; this.story = story;
+	}
+
+	public void setWebUrl(String wu){ webUrl = wu; }
 	public void setTitleNum(String tn){ titleNum = tn; }
+	public void setTitle(String t){ title = t; }
+	public void setAuthor(String a){ author = a; }
+	public void setDate(Date d){ date = d; }
+	public void setStory(String s){ story = s; }
 	
 	public void setCommentList(ArrayList<Comment> cList){ commentList = cList; }
 	public void addComment(Comment comment){ commentList.add(comment); }
@@ -43,13 +44,13 @@ public class Document {
 	
 	public void setSentimentScore(double score){ sentimentScore = score; }
 	
-	
-	public String getAuthor(){ return author; }
+	public String getWebUrl(){ return webUrl; }
+	public String getTitleNum(){ return titleNum; }
 	public String getTitle(){ return title; }
+	public String getAuthor(){ return author; }
+	public Date getDate(){ return date; }
 	public String getStory(){ return story; }
 	public ArrayList<Comment> getCommentList(){ return commentList; }
-	public Date getDate(){ return date; }
-	public String getTitleNum(){ return titleNum; }
 	
 	public ArrayList<String> getSentenceFromStory(){ return sentenceFromStory; }
 	public Morpheme getMorphemeOfTitle(){ return morphemeOfTitle; }
