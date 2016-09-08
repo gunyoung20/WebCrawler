@@ -17,13 +17,13 @@ public class FileHandler {
 
 	// constructor
 	public FileHandler() {
-		this(System.getProperty("user.dir"), "", "", System.getProperty("file.encoding"));
+		this(System.getProperty("user.dir"), "", "txt", "utf-8");
 	}
 	public FileHandler(String targetName, String extension) {
-		this(System.getProperty("user.dir"), targetName, extension, System.getProperty("file.encoding"));
+		this(System.getProperty("user.dir"), targetName, extension, "utf-8");
 	}
 	public FileHandler(String directory, String targetName, String extension) {
-		this(directory, targetName, extension, System.getProperty("file.encoding"));
+		this(directory, targetName, extension, "utf-8");
 	}
 	public FileHandler(String directory, String targetName, String extension, String charset) {
 		this.directory = directory + "/" + targetName;
@@ -339,17 +339,16 @@ public class FileHandler {
 		return recordList;
 	}
 	
-	public void writeWebFile(String dir, String fileName, String web)
+	public boolean writeWebFile(String dir, String fileName, String web)
 	{
 		if(web == null)
 		{
 			System.err.println(dir + "/" + fileName + " Data is Not found For Writing file(void writeWebFile(String dir, String fileName, String web))");
-			return;
+			return false;
 		}
 
-		if ((new File(dir)).mkdirs() == true) {
+		if ((new File(dir)).mkdirs() == true) 
 			System.out.println("Directories : " + dir + " created");
-		}
 		
 	    try 
 	    {
@@ -364,11 +363,18 @@ public class FileHandler {
 			bw.write(web);
 			bw.close();
 	    }
-	    
 	    catch (IOException e) 
 	    {
 	       System.err.println(e); 
+	       return false;
 	    }
+	    
+	    return true;
+	}
+
+	public String readWebFile(String dir, String fileName)
+	{
+		return readWebFile(dir, fileName, extension); 
 	}
 	public String readWebFile(String dir, String fileName, String extension)
 	{
@@ -400,10 +406,6 @@ public class FileHandler {
 		}
 		
 		return record;
-	}
-	public String readWebFile(String dir, String fileName)
-	{
-		return readWebFile(dir, fileName, extension); 
 	}
 	
 	private boolean checkChangedComment(Document prevDoc, Document nowDoc)

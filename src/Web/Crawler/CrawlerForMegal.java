@@ -18,8 +18,6 @@ public class CrawlerForMegal extends Crawler{
 		scraper.setPage(1);
 		
 		ArrayList<Document> documentList = new ArrayList<>();
-		ArrayList<WebSource> sourcesOfDocumentList = new ArrayList<>();
-		ArrayList<WebSource> sourcesOfCommentsList = new ArrayList<>();
 		
 		// Phase web sites from each web addresses
 		String nowPages = scraper.getPageToString();
@@ -34,47 +32,40 @@ public class CrawlerForMegal extends Crawler{
 			System.out.println("URL : " + scraper.getSearchUrl());
 			System.out.println("----------------- Megalian " + nowPages + " Pages About " + target + " Collect Start ----------------------");
 			// collect sources of web pages and split sector between documents and each comments
-			if(!collectSourcesOfWebPage(tempOfWeb, sourcesOfDocumentList, sourcesOfCommentsList, mode))
+			if(!phaseSourcesOfWebPage(tempOfWeb, documentList, mode))
 				continue;
 			System.out.println("----------------- Megalian " + nowPages + " Pages About " + target + " Collect Complete ----------------------");
 
 			nowPages = phaser.phase(tempOfWeb.getSource().contains("◀ 이전")?tempOfWeb.getSource().substring(tempOfWeb.getSource().indexOf("◀ 이전")):tempOfWeb.getSource(), "/search/page/", "?", true, true);
 		}
 		
-		System.out.println("----------------- Megalian Pages About " + target + " Phase Start ----------------------");
-		if(mode != 3)
-		{
-			// phasing web page
-			documentList = phasePage(sourcesOfDocumentList, sourcesOfCommentsList);
-		}
-		System.out.println("----------------- Megalian Pages About " + target + " Phase Complete ----------------------");
 		return documentList;
 	}
-	private boolean collectSourcesOfWebPage(WebSource sourceOfPages, ArrayList<WebSource> sourcesOfDocumentList, ArrayList<WebSource> sourcesOfCommentsList, int mode)
+	private boolean phaseSourcesOfWebPage(WebSource sourceOfPages, ArrayList<Document> documentList, int mode)
 	{
 		ArrayList<String> token = phaser.split(sourceOfPages.getSource(), "<div class=\"id\">");
 		ArrayList<String> documentUrlListOfPage = phaseDocumentUrlList(token, "<a href=\"", "\"", true);
 
 		// Bring web pages about each document
 		WebSource sourceOfDocumentPage, sourceOfCommentsPage;
-		String table, tableId, memoUrl, urlOfPage;
+		String table, tableId, memoUrl, url;
 		for (int i = 0; i < documentUrlListOfPage.size(); i++) {
 			// split part of document
-			urlOfPage = documentUrlListOfPage.get(i);
-			sourceOfDocumentPage = scraper.readWebSite(urlOfPage, "Document", mode);
+			url = documentUrlListOfPage.get(i);
+			sourceOfDocumentPage = scraper.readWebSite(url, "Document", mode);
 			if(sourceOfDocumentPage.getSource().contains(scraper.DeletedDocumentCode))
 			{
-				System.err.println("Deleted Document!! - " + urlOfPage);
+				System.err.println("Deleted Document!! - " + url);
 				documentUrlListOfPage.remove(i--);
 				continue;
 			}
 			// Extract Comment Page Size
 			if(mode != 2){
-				System.out.println("Megalian Page Url : " + urlOfPage);
+				System.out.println("Megalian Page Url : " + url);
 				System.out.println("----------------- Megalian Comments About " + scraper.getTarget() + " Collect Start ----------------------");
 			}
 			// Phase All Comments
-			table = urlOfPage.substring(urlOfPage.indexOf(scraper.getUrl())+scraper.getUrl().length()+1);
+			table = url.substring(url.indexOf(scraper.getUrl())+scraper.getUrl().length()+1);
 			tableId = table.substring(table.indexOf("/")+1);
 			table = table.substring(0, table.indexOf("/"));
 			memoUrl = "http://www.megalian.com/json_replies?thread_id="+tableId+"&forumid="+table+"&start=0";
@@ -82,111 +73,119 @@ public class CrawlerForMegal extends Crawler{
 
 			if(mode != 2)
 				System.out.println("----------------- Megalian Comments About " + scraper.getTarget() + " Collect Complete ----------------------");
-			
-			sourcesOfCommentsList.add(sourceOfCommentsPage);
-			sourcesOfDocumentList.add(sourceOfDocumentPage);
+						
+			if(mode != 3)
+			{
+				System.out.println("----------------- Megalian Pages About " + url + " Phase Start ----------------------");
+				// phasing web page
+				Document document = phaseDocument(url, sourceOfDocumentPage, sourceOfCommentsPage);
+				documentList.add(document);
+
+				System.out.println("----------------- Megalian Pages About " + url + " Phase Complete ----------------------");
+			}
 		}
 		if(mode != 2)
 			System.out.println("----------------- Megalian Documents About " + scraper.getTarget() + " Collect Complete ----------------------");
+		
 		return true;
 	}
-	private ArrayList<Document> phasePage(ArrayList<WebSource> sourcesOfDocumentList, ArrayList<WebSource> sourcesOfCommentsList){
-
-		ArrayList<Document> documentList = new ArrayList<>();
+	private Document phaseDocument(String url, WebSource sourceOfDocument, WebSource sourceOfComments){
 		// extract document
-		String ID, title, author, date, time, story, sourceOfDate, sourceOfDocument;
-		for (int i = 0; i < sourcesOfDocumentList.size(); i++) {
-			sourceOfDocument = sourcesOfDocumentList.get(i).getSource();
-			Document document = new Document();
+		Document document = phaseBasicDocument(url, sourceOfDocument.getSource());
 
-			// title phasing
-			title = phaser.phase(sourceOfDocument, "제목</div><h1>", "</h1>", false, true);
-			
-			// ID phasing
-			ID = phaser.phase(sourceOfDocument.substring(sourceOfDocument.indexOf("<article class=") == -1 ? 0 : sourceOfDocument.indexOf("<article class=")+"<article class=".length()),
-					"id=\"", "\">", true, true);
-			// author phasing
-			author = phaser.phase(sourceOfDocument.substring(
-					sourceOfDocument.indexOf("글쓴이") == -1 ? 0 : sourceOfDocument.indexOf("글쓴이")),
-					"\">", "</a>", true, true);
-			// date phasing
-			sourceOfDate = sourceOfDocument.substring(
-					sourceOfDocument.indexOf("<div class=\"date\">") == -1 ? 0 : sourceOfDocument.indexOf("<div class=\"date\">"));
-			date = phaser.phase(sourceOfDate, "<div class=\"date\">", " ", true, true);
-			time = phaser.phase(sourceOfDate, " ", "</div>", true, true);
-			// Date
-			Date d = new Date();
-			String[] tempD = date.split("-");
-			d.setYear(Integer.parseInt(tempD[0]));
-			d.setMonth(Integer.parseInt(tempD[1]));
-			d.setDate(Integer.parseInt(tempD[2]));
-			// Time
-			String[] tempT = time.split(":");
-			d.setHours(Integer.parseInt(tempT[0]));
-			d.setMinutes(Integer.parseInt(tempT[1]));
-			d.setSeconds(Integer.parseInt(tempT[2]));
-
-			// document story phasing
-			story = phaser.phase(sourceOfDocument, "<div class=\"txt\">", "</div>", true, true);
-			
-			story = phaser.storyFilter(story);
-			
-			// phasing comments
-			String comID, comAuthor, comStory, associated, comDate, comTime;
-			ArrayList<Comment> commentList = new ArrayList<Comment>();
-			// split parts of comments
-			ArrayList<String> sourceList = phaser.phase(sourcesOfCommentsList.get(i).getSource(), "<article class=", "</article>", "<article class=", true, false);
-			for (int j = 0; j < sourceList.size(); j++) {
-				String sourceOfComment = sourceList.get(j).replace("\"", "");
-
-				// Comment ID
-				comID = phaser.phase(sourceOfComment, "id=", ">", true, true);
-
-				// Comment Author
-				comAuthor = phaser.phase(sourceOfComment, "s nickname>", "</a>", true, true);
-
-				// date phasing
-				sourceOfDate = sourceOfDocument.substring(
-						sourceOfDocument.indexOf("class=date>") == -1 ? 0 : sourceOfDocument.indexOf("class=date>"));
-				// Date
-				comDate = phaser.phase(sourceOfComment, "class=date>", " ", true, true);
-
-				// Time
-				comTime = phaser.phase(sourceOfComment, " ", "</span>", true, true);
-
-				// Date
-				Date cd = new Date();
-				String[] tempCD = comDate.split("-");
-				cd.setYear(Integer.parseInt(tempCD[0]));
-				cd.setMonth(Integer.parseInt(tempCD[1]));
-				cd.setDate(Integer.parseInt(tempCD[2]));
-				// Time
-				String[] tempCT = comTime.split(":");
-				cd.setHours(Integer.parseInt(tempCT[0]));
-				cd.setMinutes(Integer.parseInt(tempCT[1]));
-				cd.setSeconds(Integer.parseInt(tempCT[2]));
-
-				// Comment Story
-				comStory = phaser.phase(sourceOfComment, "class=txt>", "<!--", false, true);
-
-				// Comment Associated Index(new)
-				associated = "0";
-
-				Comment comment = new Comment(comID, comAuthor, cd, comStory, associated);
+		// phasing comments
+		ArrayList<Comment> commentList = new ArrayList<Comment>();
+		// split parts of comments
+		ArrayList<String> sourceList = phaser.phase(sourceOfComments.getSource()
+										, "<article class=", "</article>", "<article class=", true, false);
+		for (int i = 0; i < sourceList.size(); i++) 
+		{
+				Comment comment = phaseComment(sourceList.get(i));
 				commentList.add(comment);
-			}
-			// insert document data
-			document.setTitleNum(ID);
-			document.setTitle(title);
-			document.setAuthor(author);
-			document.setDate(d);
-			document.setStory(story);
-			document.setCommentList(commentList);
-
-			documentList.add(document);
 		}
+		// insert comments
+		document.setCommentList(commentList);
 		
-		return documentList;
+		return document;
+	}
+	private Document phaseBasicDocument(String url, String sourceOfDocument)
+	{
+		// extract document
+		String ID, title, author, date, time, story, sourceOfDate;
+		
+		// title phasing
+		title = phaser.phase(sourceOfDocument, "제목</div><h1>", "</h1>", false, true);
+		
+		// ID phasing
+		ID = phaser.phase(sourceOfDocument.substring(sourceOfDocument.indexOf("<article class=") == -1 ? 0 : sourceOfDocument.indexOf("<article class=")+"<article class=".length()),
+				"id=\"", "\">", true, true);
+		// author phasing
+		author = phaser.phase(sourceOfDocument.substring(
+				sourceOfDocument.indexOf("글쓴이") == -1 ? 0 : sourceOfDocument.indexOf("글쓴이")),
+				"\">", "</a>", true, true);
+		// date phasing
+		sourceOfDate = sourceOfDocument.substring(
+				sourceOfDocument.indexOf("<div class=\"date\">") == -1 ? 0 : sourceOfDocument.indexOf("<div class=\"date\">"));
+		date = phaser.phase(sourceOfDate, "<div class=\"date\">", " ", true, true);
+		time = phaser.phase(sourceOfDate, " ", "</div>", true, true);
+		// Date
+		Date d = new Date();
+		String[] tempD = date.split("-");
+		d.setYear(Integer.parseInt(tempD[0]));
+		d.setMonth(Integer.parseInt(tempD[1]));
+		d.setDate(Integer.parseInt(tempD[2]));
+		// Time
+		String[] tempT = time.split(":");
+		d.setHours(Integer.parseInt(tempT[0]));
+		d.setMinutes(Integer.parseInt(tempT[1]));
+		d.setSeconds(Integer.parseInt(tempT[2]));
+
+		// document story phasing
+		story = phaser.phase(sourceOfDocument, "<div class=\"txt\">", "</div>", true, true);
+		
+		story = phaser.storyFilter(story);
+
+		return new Document(url, ID, title, author, d, story);
+	}
+	private Comment phaseComment(String sourceOfComment)
+	{
+		// phasing comments
+		String comID, comAuthor, comStory, associated, comDate, comTime, sourceOfDate;
+
+		// Comment ID
+		comID = phaser.phase(sourceOfComment, "id=", ">", true, true);
+
+		// Comment Author
+		comAuthor = phaser.phase(sourceOfComment, "s nickname>", "</a>", true, true);
+
+		// date phasing
+		sourceOfDate = sourceOfComment.substring(sourceOfComment.indexOf("class=date>") == -1 ?
+				0 : sourceOfComment.indexOf("class=date>"), sourceOfComment.indexOf("</span>"));
+//		// Date
+//		comDate = phaser.phase(sourceOfDate, "class=date>", " ", true, true);
+//
+//		// Time
+//		comTime = phaser.phase(sourceOfDate, " ", "</span>", true, true);
+
+		// Date
+		Date cd = new Date(sourceOfDate);
+//		String[] tempCD = comDate.split("-");
+//		cd.setYear(Integer.parseInt(tempCD[0]));
+//		cd.setMonth(Integer.parseInt(tempCD[1]));
+//		cd.setDate(Integer.parseInt(tempCD[2]));
+//		// Time
+//		String[] tempCT = comTime.split(":");
+//		cd.setHours(Integer.parseInt(tempCT[0]));
+//		cd.setMinutes(Integer.parseInt(tempCT[1]));
+//		cd.setSeconds(Integer.parseInt(tempCT[2]));
+
+		// Comment Story
+		comStory = phaser.phase(sourceOfComment, "class=txt>", "<!--", false, true);
+
+		// Comment Associated Index(new)
+		associated = "0";
+
+		return new Comment(comID, comAuthor, cd, comStory, associated);
 	}
 
 	private ArrayList<String> phaseDocumentUrlList(ArrayList<String> originToken, String startCon, String endCon, boolean filter) {

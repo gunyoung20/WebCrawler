@@ -11,14 +11,19 @@ import Data.WebSource;
 public class WebSourceDAO {
 	private DBConnection pool;
 	private Connection con;
+	private String dir;
 	
-	public WebSourceDAO(){ con=null; pool=DBConnection.getInstance(); };
+	public WebSourceDAO(){ con=null; pool=DBConnection.getInstance(); dir = System.getProperty("user.dir") + "/WebSource/"; };
 	
-	public boolean insertWebSource(WebSource ws)
+	public boolean insert(WebSource ws)
 	{
+		String u = ws.getUrl();
+		String dir = this.dir + ws.getWebName() + "/" + ws.getTarget() + "/" + ws.getSourceName();
+		String fileName = getFileName(u);
+		
 		boolean success = false;
 		PreparedStatement pstmt = null;
-		String sql = "insert into websource (url, web_url, web_name, target, date, source, source_name) values (?, ?, ?, ?, ?, ?, ?)";
+		String sql = "insert into websource (url, web_url, web_name, target, date, dir, source_name) values (?, ?, ?, ?, ?, ?, ?)";
 
 		con = pool.getConnection();
 		if (con == null) {
@@ -32,7 +37,7 @@ public class WebSourceDAO {
 			pstmt.setString(3, ws.getWebName() );
 			pstmt.setString(4, ws.getTarget() );
 			pstmt.setString(5, ws.getDate().toString() );
-			pstmt.setString(6, ws.getSource() );
+			pstmt.setString(6, dir );
 			pstmt.setString(7, ws.getSourceName() );
 
 			int count = pstmt.executeUpdate();		// 실행한 갯수만큼 count에 리턴
@@ -46,13 +51,18 @@ public class WebSourceDAO {
 		} finally {
 			pool.freeConnection(con, pstmt);
 		}
+		
+		FileHandler fh = new FileHandler();
+		fh.writeWebFile(dir, fileName, ws.getSource());
+		
 		return success;
 	}
 	public boolean insertList(ArrayList<WebSource> wsl)
 	{
+		
 		boolean success = false;
 		PreparedStatement pstmt = null;
-		String sql = "insert into websource (url, web_url, web_name, target, date, source, source_name) values(?, ?, ?, ?, ?, ?, ?)";
+		String sql = "insert into websource (url, web_url, web_name, target, date, dir, source_name) values(?, ?, ?, ?, ?, ?, ?)";
 
 		con = pool.getConnection();
 		if (con == null) {
@@ -60,29 +70,39 @@ public class WebSourceDAO {
 			return false;
 		}
 		try {
+			String u, dir, fileName;
 			for(int i = 0; i < wsl.size(); i++)
 			{
 				pstmt = con.prepareStatement(sql);
 				
 				WebSource ws = wsl.get(i);
+				
+				u = ws.getUrl();
+				dir = this.dir + ws.getWebName() + "/" + ws.getTarget() + "/" + ws.getSourceName();
+				fileName = getFileName(u);
+				
 				pstmt.setString(1, ws.getUrl() );
 				pstmt.setString(2, ws.getWebUrl() );
 				pstmt.setString(3, ws.getWebName() );
 				pstmt.setString(4, ws.getTarget() );
 				pstmt.setString(5, ws.getDate().toString() );
-				pstmt.setString(6, ws.getSource() );
+				pstmt.setString(6, dir );
 				pstmt.setString(7, ws.getSourceName() );
 
 				int count = pstmt.executeUpdate();		// 실행한 갯수만큼 count에 리턴
 				if( count > 0 )
+				{
 					success = true;
+					FileHandler fh = new FileHandler();
+					fh.writeWebFile(dir, fileName, ws.getSource());
+				}
 				if(pstmt != null)
 					pstmt.close();
 			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return success;
+			return false;
 		} finally {
 			pool.freeConnection(con, pstmt);
 		}
@@ -117,10 +137,20 @@ public class WebSourceDAO {
 		} finally {
 			pool.freeConnection(con, pstmt);
 		}
+
+		String u = ws.getUrl();
+		String dir = this.dir + ws.getWebName() + "/" + ws.getTarget() + "/" + ws.getSourceName();
+		String fileName = getFileName(u);
+		
+		FileHandler fh = new FileHandler();
+		fh.fileDelete(dir, fileName, "txt");
+		
 		return success;
 	}
 	public boolean delete(String webName)
 	{
+		ArrayList<WebSource> targetForDelete = getList(webName);
+		
 		boolean success = false;
 		PreparedStatement pstmt = null;
 		String sql = "delete from websource where webName=?";
@@ -146,10 +176,26 @@ public class WebSourceDAO {
 		} finally {
 			pool.freeConnection(con, pstmt);
 		}
+
+		String u, dir, fileName;
+		FileHandler fh = new FileHandler();		
+		for(int i=0; i < targetForDelete.size(); i++)
+		{
+			WebSource ws = targetForDelete.get(i);
+			
+			u = ws.getUrl();
+			dir = this.dir + ws.getWebName() + "/" + ws.getTarget() + "/" + ws.getSourceName();
+			fileName = getFileName(u);
+
+			fh.fileDelete(dir, fileName, "txt");
+		}
+		
 		return success;
 	}
 	public boolean delete(String webName, String target)
 	{
+		ArrayList<WebSource> targetForDelete = getList(webName, target);
+		
 		boolean success = false;
 		PreparedStatement pstmt = null;
 		String sql = "delete from websource where webName=? and target=?";
@@ -176,10 +222,26 @@ public class WebSourceDAO {
 		} finally {
 			pool.freeConnection(con, pstmt);
 		}
+		
+		String u, dir, fileName;
+		FileHandler fh = new FileHandler();		
+		for(int i=0; i < targetForDelete.size(); i++)
+		{
+			WebSource ws = targetForDelete.get(i);
+			
+			u = ws.getUrl();
+			dir = System.getProperty("user.dir") + "/" + ws.getWebName() + "/" + ws.getTarget() + "/" + ws.getSourceName();
+			fileName = getFileName(u);
+
+			fh.fileDelete(dir, fileName, "txt");
+		}
+		
 		return success;
 	}
 	public boolean deleteAll()
 	{
+		ArrayList<WebSource> targetForDelete = getAllList();
+		
 		boolean success = false;
 		PreparedStatement pstmt = null;
 		String sql = "delete from websource";
@@ -203,13 +265,28 @@ public class WebSourceDAO {
 		} finally {
 			pool.freeConnection(con, pstmt);
 		}
+		
+		String u, dir, fileName;
+		FileHandler fh = new FileHandler();		
+		for(int i=0; i < targetForDelete.size(); i++)
+		{
+			WebSource ws = targetForDelete.get(i);
+			
+			u = ws.getUrl();
+			dir = this.dir + ws.getWebName() + "/" + ws.getTarget() + "/" + ws.getSourceName();
+			fileName = getFileName(u);
+
+			fh.fileDelete(dir, fileName, "txt");
+		}
+		
 		return success;
 	}
 	
-	public boolean update(WebSource ws, WebSource mws) {
+	public boolean update(WebSource ws) { return update(ws, ws); }
+	public boolean update(WebSource ws, WebSource mws) {		
 		boolean success = false;
 		PreparedStatement pstmt = null;
-		String sql = "update websource set url=?, web_url=?, web_name=?, target=?, date=?, source=?, source_name=? "
+		String sql = "update websource set url=?, web_url=?, web_name=?, target=?, date=?, dir=?, source_name=? "
 				+ "where url=? and source_name=?";
 
 		con = pool.getConnection();
@@ -235,28 +312,33 @@ public class WebSourceDAO {
 			if( count > 0 )
 				success = true;
 		} catch (SQLException e) {
-			e.printStackTrace();
 			return success;
 		} finally {
 			pool.freeConnection(con, pstmt);
+
+			FileHandler fh = new FileHandler();
+			
+			String u = ws.getUrl();
+			String dir = this.dir + ws.getWebName() + "/" + ws.getTarget() + "/" + ws.getSourceName();
+			String fileName = getFileName(u);
+			if(!ws.getSource().equals(mws.getSource()) || success)
+			{
+				fh.fileDelete(dir, fileName, "txt");
+				
+				dir = this.dir + mws.getWebName() + "/" + mws.getTarget() + "/" + mws.getSourceName();
+				fh.writeWebFile(dir, fileName, mws.getSource());
+				
+				success = true;
+			}
 		}
 		return success;
 	}
-	public boolean updateAll(ArrayList<WebSource> wsl) {
+	public boolean update(ArrayList<WebSource> wsl) {
 		boolean success = false;
 
-		ArrayList<WebSource> tempList = getAllList();
-		if(tempList == null)
-			return success;
-		
-		if(!deleteAll())
-			return success;
-		else if(!(success = insertList(wsl)))
-		{
-			for(int i = 0; i < 5; i++)
-				if(insertList(tempList)) break;
-			return success;
-		}
+		for(int i = 0; i < wsl.size(); i++)
+			if(!update(wsl.get(i)))
+				insert(wsl.get(i));
 
 		return success;
 	}
@@ -280,7 +362,15 @@ public class WebSourceDAO {
 			rs.next();
 
 			ws = new WebSource(rs.getString("url"), rs.getString("web_url"), rs.getString("web_name")
-					, rs.getString("target"), rs.getString("date"), rs.getString("source_name"), rs.getString("source"));
+					, rs.getString("target"), rs.getString("date"), rs.getString("source_name"));
+			
+			String u = ws.getUrl();
+			String dir = rs.getString("dir");
+			String fileName = getFileName(u);
+			FileHandler fh = new FileHandler();
+			String source = fh.readWebFile(dir, fileName);
+			
+			ws.setSource(source);
 
 			rs.close();
 		} catch (SQLException e) {
@@ -310,7 +400,15 @@ public class WebSourceDAO {
 			rs.next();
 
 			ws = new WebSource(rs.getString("url"), rs.getString("web_url"), rs.getString("web_name")
-					, rs.getString("target"), rs.getString("date"), rs.getString("source_name"), rs.getString("source"));
+					, rs.getString("target"), rs.getString("date"), rs.getString("source_name"));
+			
+			String u = ws.getUrl();
+			String dir = rs.getString("dir");
+			String fileName = getFileName(u);
+			FileHandler fh = new FileHandler();
+			String source = fh.readWebFile(dir, fileName);
+			
+			ws.setSource(source);
 
 			rs.close();
 		} catch (SQLException e) {
@@ -319,6 +417,7 @@ public class WebSourceDAO {
 		} finally {
 			pool.freeConnection(con, pstmt, rs);
 		}
+		
 		return ws;
 	}
 	
@@ -337,15 +436,20 @@ public class WebSourceDAO {
 			pstmt = con.prepareStatement(SQL);
 			rs = pstmt.executeQuery();
 
-			String url, web_url, web_name, target, date, source, source_name;
+			FileHandler fh = new FileHandler();
+			String dir, fileName;
+			String url, web_url, web_name, target, date, source_name, source;
 			while (rs.next()) {
 				url = rs.getString("url");
 				web_url = rs.getString("web_url");
 				web_name = rs.getString("web_name");
 				target = rs.getString("target");
 				date = rs.getString("date");
-				source = rs.getString("source");
+				dir = rs.getString("dir");
 				source_name = rs.getString("source_name");
+				
+				fileName = getFileName(url);
+				source = fh.readWebFile(dir, fileName);
 				
 				WebSource ws = new WebSource(url, web_url, web_name, target, date, source_name, source);
 
@@ -378,15 +482,20 @@ public class WebSourceDAO {
 			pstmt.setString(1, webName);
 			rs = pstmt.executeQuery();
 
-			String url, web_url, web_name, target, date, source, source_name;
+			FileHandler fh = new FileHandler();
+			String dir, fileName;
+			String url, web_url, web_name, target, date, source_name, source;
 			while (rs.next()) {
 				url = rs.getString("url");
 				web_url = rs.getString("web_url");
 				web_name = rs.getString("web_name");
 				target = rs.getString("target");
 				date = rs.getString("date");
-				source = rs.getString("source");
+				dir = rs.getString("dir");
 				source_name = rs.getString("source_name");
+				
+				fileName = getFileName(url);
+				source = fh.readWebFile(dir, fileName);
 				
 				WebSource ws = new WebSource(url, web_url, web_name, target, date, source_name, source);
 
@@ -418,15 +527,20 @@ public class WebSourceDAO {
 			pstmt.setString(2, target);
 			rs = pstmt.executeQuery();
 
-			String url, web_url, web_name, ttarget, date, source, source_name;
+			FileHandler fh = new FileHandler();
+			String dir, fileName;
+			String url, web_url, web_name, ttarget, date, source_name, source;
 			while (rs.next()) {
 				url = rs.getString("url");
 				web_url = rs.getString("web_url");
 				web_name = rs.getString("web_name");
 				ttarget = rs.getString("target");
 				date = rs.getString("date");
-				source = rs.getString("source");
+				dir = rs.getString("dir");
 				source_name = rs.getString("source_name");
+				
+				fileName = getFileName(url);
+				source = fh.readWebFile(dir, fileName);
 				
 				WebSource ws = new WebSource(url, web_url, web_name, ttarget, date, source_name, source);
 
@@ -459,15 +573,20 @@ public class WebSourceDAO {
 			pstmt.setString(3, sourceName);
 			rs = pstmt.executeQuery();
 
-			String url, web_url, web_name, ttarget, date, source, source_name;
+			FileHandler fh = new FileHandler();
+			String dir, fileName;
+			String url, web_url, web_name, ttarget, date, source_name, source;
 			while (rs.next()) {
 				url = rs.getString("url");
 				web_url = rs.getString("web_url");
 				web_name = rs.getString("web_name");
 				ttarget = rs.getString("target");
 				date = rs.getString("date");
-				source = rs.getString("source");
+				dir = rs.getString("dir");
 				source_name = rs.getString("source_name");
+				
+				fileName = getFileName(url);
+				source = fh.readWebFile(dir, fileName);
 				
 				WebSource ws = new WebSource(url, web_url, web_name, ttarget, date, source_name, source);
 
@@ -481,5 +600,15 @@ public class WebSourceDAO {
 			pool.freeConnection(con, pstmt, rs);
 		}
 		return list;
+	}
+
+	private String getFileName(String u)
+	{
+		String fileName = u.substring(u.indexOf("//")+2).substring(u.substring(u.indexOf("//")+2).indexOf("/")+1);
+		fileName = fileName.replace("/", "-");
+		fileName = fileName.replace("?", "@");
+		fileName = fileName.replace(".", "#");
+		
+		return fileName;
 	}
 }

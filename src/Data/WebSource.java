@@ -7,6 +7,12 @@ public class WebSource {
 	public WebSource(String url, String webUrl, String webName, String target, String date){
 		this(url, webUrl, webName, target, date, "", "");
 	}
+	public WebSource(String url, String webUrl, String webName, String target, Date date, String sourceName){
+		this(url, webUrl, webName, target, date, "", "");
+	}
+	public WebSource(String url, String webUrl, String webName, String target, String date, String sourceName){
+		this(url, webUrl, webName, target, date, "", "");
+	}
 	public WebSource(String url, String webUrl, String webName, String target, String date, String sourceName, String source){
 		this.url = url; this.webUrl = webUrl; this.webName = webName; this.target = target; 
 		this.date = new Date(date); this.source = source; this.sourceName = sourceName;

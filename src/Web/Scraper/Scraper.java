@@ -36,7 +36,7 @@ public class Scraper {
 		WebSource source = new WebSource(u, url, webName, target, nowTimeForCollect);
 
 		String buffer = "";
-		String path = System.getProperty("user.dir") + "/WebSource/" + webName + "/" + target;
+		String path = System.getProperty("user.dir") + "/temp/Page/" + webName + "/" + target;
 		String dummy = webName + "-" + target + "-" + sName;
 		String dummyExtension = "txt";
 		
@@ -44,7 +44,7 @@ public class Scraper {
 		if(mode == 2)
 			buffer = dfh.readWebFile(u, dummy + page);
 		else
-			buffer = readWebSource(u, path, dummy);
+			buffer = scrapWebSource(u, path, dummy);
 		if(mode == 0 || mode == 3)
 			dfh.writeWebFile(path + "/" + nowTimeForCollect, dummy + page,	buffer);
 		
@@ -74,25 +74,23 @@ public class Scraper {
 			String webName = u.substring(u.indexOf(".")+1).substring(0, u.substring(u.indexOf(".")+1).indexOf("."));
 			
 			String buffer = "";
-			String path = System.getProperty("user.dir") + "/WebSource/" + webName + "/" + target;
+			String path = System.getProperty("user.dir") + "/temp/" + webName + "/" + target;
 			String dummy = target + "-" + sName;
 			
-			buffer = readWebSource(searchUrl, path, dummy);
+			buffer = scrapWebSource(searchUrl, path, dummy);
 
 			source = new WebSource(searchUrl, url, webName, target, nowTimeForCollect, sName, buffer);
-		}
-		if(mode == 0 || mode == 3)
-		{
-			WebSource temp;
-			if((temp = wsdao.getSource(searchUrl)) == null)
-				wsdao.insertWebSource(source);
-			else if(!temp.getSource().equals(source.getSource()))
-				wsdao.update(temp, source);
+			
+			if(mode == 0 || mode == 3)
+			{
+				if(!wsdao.update(source))
+					wsdao.insert(source);
+			}
 		}
 		
 		return source;
 	}
-	private String readWebSource(String u, String dir, String fileName){
+	private String scrapWebSource(String u, String dir, String fileName){
 		String buffer = "";
 
 		String dummyExtension = "txt";
@@ -111,9 +109,9 @@ public class Scraper {
 			} catch (Exception e) {
 				e.getStackTrace();
 			}
-			sleep(1200);
+			sleep(500);
 			buffer = dfh.readWebFile(dir, fileName);
-			if(buffer.equals("") || buffer.contains(WebAccessErrorCode))
+			if(buffer.contains(WebAccessErrorCode) || buffer.contains(WebAccessDeniedCode))
 			{
 				System.err.println("Access Error path : " + dir + " target : " + fileName);
 				continue;
@@ -150,6 +148,7 @@ public class Scraper {
 	private String nowTimeForCollect;
 	private HashMap<String, String> targetList;
 
+	public final String WebAccessDeniedCode= "Do not Accessed Website";
 	public final String WebAccessErrorCode = "비정상적인 검색입니다.";
 	public final String DeletedDocumentCode = "삭제된 글입니다.";
 
