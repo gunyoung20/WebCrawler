@@ -1,41 +1,45 @@
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import Data.Document;
 import Storage.FileHandler;
+import Storage.DAO.DocumentDAO;
 import Web.Crawler.CrawlerForIlbe;
 import Web.Crawler.CrawlerForMegal;
 import Web.Crawler.CrawlerForOu;
 
 public class ThreadMaker implements Runnable{
-	final String Ilbe = "Ilbe", Megal = "Megal", Today = "Ou";
-	String object, target;
+	final String Ilbe = "ilbe", Megal = "megalian", Today = "todayhumor";
+	String object, target, dir;
 	int mode = 3;
 	
 	public ThreadMaker(String object, String target, int mode){
 		this.object = object;
 		this.target = target;
 		this.mode = mode;
+		this.dir = "D:/정우영/JAVA/WebCrawler/WebSource/Document";
 	}
 	
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
+		DocumentDAO ddao = new DocumentDAO();
 		if(object.equals(Ilbe))
 		{
 			if(target.equals(Megal))
 			{
 				CrawlerForIlbe IlbeWeb = new CrawlerForIlbe();
 				ArrayList<Document> documentsFromIlbe = IlbeWeb.phaseWebSite(Megal, mode);
-				FileHandler dfhForIlbe = new FileHandler("D:/정우영/JAVA/WebPhasing/FileData/Ilbe", Megal, ".doc");
+				FileHandler dfhForIlbe = new FileHandler(dir + "/" + Ilbe, Megal, ".doc");
 				dfhForIlbe.saveDocumentList(documentsFromIlbe);
+				ddao.updateAll(documentsFromIlbe);
 			}
 			else if(target.equals(Today))
 			{
 				CrawlerForIlbe IlbeWeb2 = new CrawlerForIlbe();
 				ArrayList<Document> documentsFromIlbe = IlbeWeb2.phaseWebSite(Today, mode);
-				FileHandler dfhForIlbe = new FileHandler("D:/정우영/JAVA/WebPhasing/FileData/Ilbe", Today, ".doc");
+				FileHandler dfhForIlbe = new FileHandler(dir + "/" + Ilbe, Today, ".doc");
 				dfhForIlbe.saveDocumentList(documentsFromIlbe);
+				ddao.updateAll(documentsFromIlbe);
 			}
 		}
 		else if(object.equals(Megal))
@@ -44,15 +48,17 @@ public class ThreadMaker implements Runnable{
 			{
 				CrawlerForMegal MegalWeb = new CrawlerForMegal();
 				ArrayList<Document> documentsFromMegal = MegalWeb.phaseWebSite(Ilbe, mode);
-				FileHandler dfhForMegal = new FileHandler("D:/정우영/JAVA/WebPhasing/FileData/Megal", Ilbe, ".doc");
+				FileHandler dfhForMegal = new FileHandler(dir + "/" + Megal, Ilbe, ".doc");
 				dfhForMegal.saveDocumentList(documentsFromMegal);
+				ddao.updateAll(documentsFromMegal);
 			}
 			else if(target.equals(Today))
 			{
 				CrawlerForMegal MegalWeb2 = new CrawlerForMegal();
 				ArrayList<Document> documentsFromMegal = MegalWeb2.phaseWebSite(Today, mode);
-				FileHandler dfhForMegal = new FileHandler("D:/정우영/JAVA/WebPhasing/FileData/Megal", Today, ".doc");
+				FileHandler dfhForMegal = new FileHandler(dir + "/" + Megal, Today, ".doc");
 				dfhForMegal.saveDocumentList(documentsFromMegal);
+				ddao.updateAll(documentsFromMegal);
 			}
 		}
 		else if(object.equals(Today))
@@ -61,15 +67,17 @@ public class ThreadMaker implements Runnable{
 			{
 				CrawlerForOu OuWeb = new CrawlerForOu();
 				ArrayList<Document> documentsFromOu = OuWeb.phaseWebSite(Ilbe, mode);
-				FileHandler dfhForOu = new FileHandler("D:/정우영/JAVA/WebPhasing/FileData/Ou", Ilbe, ".doc");
+				FileHandler dfhForOu = new FileHandler(dir + "/" + Today, Ilbe, ".doc");
 				dfhForOu.saveDocumentList(documentsFromOu);
+				ddao.updateAll(documentsFromOu);
 			}
 			else if(target.equals(Megal))
 			{
 				CrawlerForOu OuWeb2 = new CrawlerForOu();
 				ArrayList<Document> documentsFromOu = OuWeb2.phaseWebSite(Megal, mode);
-				FileHandler dfhForOu = new FileHandler("D:/정우영/JAVA/WebPhasing/FileData/Ou", Megal, ".doc");
+				FileHandler dfhForOu = new FileHandler(dir + "/" + Today, Megal, ".doc");
 				dfhForOu.saveDocumentList(documentsFromOu);
+				ddao.updateAll(documentsFromOu);
 			}
 		}
 		System.out.println(object + " page complete to " + target);

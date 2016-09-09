@@ -16,6 +16,7 @@ public class Comment {
 	public Comment(){ this("", "", null, "", "", null, 0.0); }
 	public Comment(String ID, String au, Date da, String sen){ this(ID, au, da, sen, "", null, 0.0); }
 	public Comment(String ID, String au, Date da, String sen, String aso){ this(ID, au, da, sen, aso, null, 0.0); }
+	public Comment(String ID, String au, String da, String sen, String aso){ this(ID, au, new Date(da), sen, aso, null, 0.0); }
 	public Comment(String ID, String au, Date da, String sen, String aso, double score){ this(ID, au, da, sen, aso, null, score); }
 	public Comment(String ID, String au, Date da, String sen, String aso, ArrayList<Morpheme> morephemeL){ this(ID, au, da, sen, aso, morephemeL, 0.0); }
 	public Comment(String ID, String au, Date da, String sen, String aso, ArrayList<Morpheme> morephemeL, double score){ this.ID=ID; morphemeOfSentence = morephemeL; author=au; date=da; asociatedComment=aso; sentence = sen; sentimentScore = score;}

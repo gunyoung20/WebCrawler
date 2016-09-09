@@ -88,16 +88,38 @@ public class Phaser {
 	
 	public String extractText(String textWithTag)
 	{
-		String temp = "";
-		while (textWithTag.contains(">")) {
-			textWithTag = textWithTag.substring(textWithTag.indexOf(">") + 1);
-			if (textWithTag.contains("<"))
-				temp = temp + textWithTag.substring(0, textWithTag.indexOf("<"));
-			textWithTag = temp + textWithTag.substring(textWithTag.indexOf(">") + 1);
-			break;
-		}
+		String result = textWithTag;
+		result = extractText(result, "<", ">");
 		
-		return textWithTag;
+		return result;
+	}
+	private String extractText(String text, String startTag, String endTag)
+	{
+		String result = "";
+		String temp = text;
+		while (temp.contains(endTag)) {
+			if (temp.contains(startTag))
+			{
+				if(temp.indexOf(startTag) < temp.indexOf(endTag))
+				{
+					result = result + temp.substring(0, temp.indexOf(startTag));
+					temp = temp.substring(temp.indexOf(endTag)+endTag.length());
+				}
+				else if(text.indexOf(endTag) < text.indexOf(startTag))
+				{
+					temp = temp.substring(temp.indexOf(endTag)+endTag.length());
+					result = result + temp.substring(0, temp.indexOf(startTag));
+				}
+			}
+			else
+				temp = temp.substring(temp.indexOf(endTag) + endTag.length());
+		}
+		if(temp.contains(startTag))
+			result = result + temp.substring(0, temp.indexOf(startTag));
+		else
+			result = result + temp;
+		
+		return result;
 	}
 	public ArrayList<String> split(String str, String con) {
 		ArrayList<String> strList = new ArrayList<String>();
@@ -120,6 +142,8 @@ public class Phaser {
 		String temp = sentence;
 		temp = temp.replace("\n", "");
 		temp = temp.replace("<br />", "\n");
+		temp = temp.replace("&it;", "<");
+		temp = temp.replace("&gt;", ">");
 		temp = temp.replace("&quot;", "\"");
 		return temp;
 	}

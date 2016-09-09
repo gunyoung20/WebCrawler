@@ -7,7 +7,7 @@ import java.util.HashMap;
 
 import Data.WebSource;
 import Storage.FileHandler;
-import Storage.WebSourceDAO;
+import Storage.DAO.WebSourceDAO;
 import Web.Phaser;
 
 public class Scraper {
@@ -31,7 +31,7 @@ public class Scraper {
 	public WebSource readWebPage(int mode){
 		String u = getSearchUrl();
 		String sName = "Page";
-		String webName = u.substring(u.indexOf(".")+1).substring(0, u.substring(u.indexOf(".")+1).indexOf("."));
+		String webName = getWebName();
 		
 		WebSource source = new WebSource(u, url, webName, target, nowTimeForCollect);
 
@@ -59,7 +59,7 @@ public class Scraper {
 		WebSourceDAO wsdao = new WebSourceDAO();
 		WebSource source = null;
 		if(mode == 2)		
-			source = wsdao.getSource(getSearchUrl());
+			source = wsdao.getSource(u);
 		else
 		{
 			Phaser phaser = new Phaser();
@@ -109,10 +109,16 @@ public class Scraper {
 			} catch (Exception e) {
 				e.getStackTrace();
 			}
-			sleep(500);
+			sleep(300);
 			buffer = dfh.readWebFile(dir, fileName);
+			if(buffer==null)
+			{
+				System.err.println("Access Error(No have data in file) path : " + dir + " target : " + fileName);
+				continue;
+			}
 			if(buffer.contains(WebAccessErrorCode) || buffer.contains(WebAccessDeniedCode))
 			{
+				System.out.println(buffer);
 				System.err.println("Access Error path : " + dir + " target : " + fileName);
 				continue;
 			}
@@ -130,6 +136,10 @@ public class Scraper {
 		}
 	}	
 	public String getUrl(){ return url; }
+	public String getWebName(){ 
+		return url.contains("www")?
+				url.substring(url.indexOf(".")+1).substring(0, url.substring(url.indexOf(".")+1).indexOf("."))
+				:url.substring(url.indexOf("//")+2).substring(0, url.substring(url.indexOf("//")+2).indexOf(".")); }
 	public String getTarget() { return target; }
 	public int getPage(){ return page; }
 	public String getPageToString(){ return String.valueOf(page); }

@@ -8,10 +8,10 @@ public class WebSource {
 		this(url, webUrl, webName, target, date, "", "");
 	}
 	public WebSource(String url, String webUrl, String webName, String target, Date date, String sourceName){
-		this(url, webUrl, webName, target, date, "", "");
+		this(url, webUrl, webName, target, date, sourceName, "");
 	}
 	public WebSource(String url, String webUrl, String webName, String target, String date, String sourceName){
-		this(url, webUrl, webName, target, date, "", "");
+		this(url, webUrl, webName, target, date, sourceName, "");
 	}
 	public WebSource(String url, String webUrl, String webName, String target, String date, String sourceName, String source){
 		this.url = url; this.webUrl = webUrl; this.webName = webName; this.target = target; 

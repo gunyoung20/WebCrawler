@@ -6,6 +6,7 @@ import Data.Comment;
 import Data.Date;
 import Data.Document;
 import Data.WebSource;
+import Storage.DAO.WebSourceDAO;
 import Web.Scraper.ScraperForOu;
 
 public class CrawlerForOu extends Crawler {
@@ -18,28 +19,29 @@ public class CrawlerForOu extends Crawler {
 //	mode-3 : only collecting web sources from online.
 	public ArrayList<Document> phaseWebSite(String target, int mode)
 	{
+		ArrayList<Document> documentList = new ArrayList<>();
+
 		scraper = new ScraperForOu(scraper.getSearchUrl(), target);
 		scraper.setPage(1);
-		
-		ArrayList<Document> documentList = new ArrayList<>();
 		
 		if(mode != 2)
 		{
 			// Phase web sites from each web addresses
 			String nowPages = scraper.getPageToString();
 			WebSource tempOfWeb;
-			while(!nowPages.contains("단축키"))
+//			while(!nowPages.contains("단축키"))
+			while(!nowPages.equals("11"))
 			{
 				scraper.setPage(nowPages);
 				// search next page number
 				tempOfWeb = scraper.readWebPage(mode);
 			
 				System.out.println("URL : " + scraper.getSearchUrl());
-				System.out.println("----------------- Todayhumor " + nowPages + " Pages About " + target + " Collect Start ----------------------");
+				System.out.println("----------------- Todayhumor " + nowPages + " Pages About " + target + " Phase Start ----------------------");
 				// collect sources of web pages and split sector between documents and each comments
 				if(!phaseSourcesOfWebPage(tempOfWeb, documentList, mode))
 					continue;
-				System.out.println("----------------- Todayhumor " + nowPages + " Pages About " + target + " Collect Complete ----------------------");
+				System.out.println("----------------- Todayhumor " + nowPages + " Pages About " + target + " Phase Complete ----------------------");
 
 				nowPages = phaser.phase(tempOfWeb.getSource().substring(tempOfWeb.getSource().indexOf("<font size=3 color=red>")), "color=#5151FD>", "</a>", true, true);
 				if(nowPages.contains("다음10개"))
@@ -48,7 +50,14 @@ public class CrawlerForOu extends Crawler {
 		}
 		else
 		{
+			WebSourceDAO wsdao = new WebSourceDAO();
+			ArrayList<String> urlList = wsdao.getUrlList(scraper.getWebName(), target, "Document");
 			
+			System.out.println("URL : " + scraper.getSearchUrl());
+			System.out.println("----------------- Todayhumor About " + target + " Phase Start ----------------------");
+			// collect sources of web pages and split sector between documents and each comments
+			phaseSourcesOfWebPage(urlList, documentList, mode);
+			System.out.println("----------------- Todayhumor About " + target + " Phase Complete ----------------------");			
 		}
 		
 		return documentList;
@@ -57,7 +66,11 @@ public class CrawlerForOu extends Crawler {
 	{
 		ArrayList<String> token = phaser.split(sourceOfPages.getSource(), "<tr class=\"view list_tr_");
 		ArrayList<String> documentUrlListOfPage = phaseDocumentUrlList(token, "<a href=", "target=", true);
-
+		
+		return phaseSourcesOfWebPage(documentUrlListOfPage, documentList, mode);
+	}
+	private boolean phaseSourcesOfWebPage(ArrayList<String> documentUrlListOfPage, ArrayList<Document> documentList, int mode)
+	{
 		// Bring web pages about each document
 		WebSource sourceOfDocumentPage, sourceOfCommentsPage;
 		String table, tableId, memoUrl, url;
@@ -109,6 +122,7 @@ public class CrawlerForOu extends Crawler {
 		ArrayList<String> sourceList = phaser.phaseSourcesOfComments(sourceOfComments.getSource(), "{", "}", "[");
 		for (int i = 0; i < sourceList.size(); i++) {
 			Comment comment = phaseComment(sourceList.get(i));
+			comment.setID(document.getTitleNum() + "-" + comment.getID());
 			commentList.add(comment);
 		}
 		// insert comments
@@ -137,7 +151,7 @@ public class CrawlerForOu extends Crawler {
 		sourceOfDate = sourceOfDocument.substring(
 				sourceOfDocument.indexOf("등록시간 : ") == -1 ? 0 : sourceOfDocument.indexOf("등록시간 : "));
 		date = phaser.phase(sourceOfDate, "등록시간 : ", " ", true, true);
-		time = phaser.phase(sourceOfDate, " ", "</div>", true, true);
+		time = phaser.phase(sourceOfDate, date+" ", "</div>", true, true);
 		// Date
 		Date d = new Date();
 		String[] tempD = date.split("/");
@@ -151,14 +165,12 @@ public class CrawlerForOu extends Crawler {
 		d.setSeconds(Integer.parseInt(tempT[2]));
 
 		// title phasing
-		title = phaser.phase(sourceOfDocument, "<!--EAP_SUBJECT-->", " <!--/EAP_SUBJECT-->", false, true);
+		title = phaser.phase(sourceOfDocument, "<!--EAP_SUBJECT-->", "<!--/EAP_SUBJECT-->", false, true);
 		
 		// document story phasing
-		story = phaser.phase(sourceOfDocument, "<div class=\"viewContent\">", "<!--viewContent-->", true, true);
+		story = phaser.phase(sourceOfDocument, "<div class=\"viewContent\">", "<!--viewContent-->", false, true);
 		
-		story = phaser.storyFilter(story);
-		
-		return new Document(url, ID, title, author, d, story);
+		return new Document(url, "todayhumor-"+ID, title, author, d, story);
 	}
 	private Comment phaseComment(String sourceOfComment)
 	{
@@ -173,10 +185,10 @@ public class CrawlerForOu extends Crawler {
 		comAuthor = phaser.phase(sourceOfComment, "name:", ",", true, true);
 
 		// Date
-		comDate = phaser.phase(sourceOfComment, "date:", "\n", true, true);
+		comDate = phaser.phase(sourceOfComment, "date:", " ", true, true);
 
 		// Time
-		comTime = phaser.phase(sourceOfComment, "\n", ",", true, true);
+		comTime = phaser.phase(sourceOfComment, " ", ",", true, true);
 
 		// Date
 		Date cd = new Date();

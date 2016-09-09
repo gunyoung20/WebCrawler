@@ -1,7 +1,5 @@
 package Web.Scraper;
 
-import Data.WebSource;
-
 public class ScraperForMegal extends Scraper{
 	public ScraperForMegal(String u, String t){
 		super(u, t); 
@@ -17,8 +15,5 @@ public class ScraperForMegal extends Scraper{
 		
 	public String getSearchUrl(){
 		return searchUrl+page+"?search="+getTargetName()+"&sf=all";
-	}
-	public WebSource readWebSite(int mode) {
-		return readWebSite(this.getSearchUrl(), mode);
 	}
 }
