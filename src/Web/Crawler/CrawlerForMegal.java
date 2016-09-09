@@ -111,6 +111,27 @@ public class CrawlerForMegal extends Crawler{
 		
 		return true;
 	}
+	public Document phaseSourceOfDocument(String url, int mode)
+	{
+		Document doc = null;
+
+		// split part of document
+		WebSource sourceOfDocumentPage = scraper.readWebSite(url, "Document", mode);
+					
+		// Phase All Comments
+		String table, tableId, memoUrl;
+		table = url.substring(url.indexOf(scraper.getUrl())+scraper.getUrl().length()+1);
+		tableId = table.substring(table.indexOf("/")+1);
+		table = table.substring(0, table.indexOf("/"));
+		memoUrl = "http://www.megalian.com/json_replies?thread_id="+tableId+"&forumid="+table+"&start=0";
+		WebSource sourceOfCommentsPage = scraper.readWebSite(memoUrl, "Comment", mode);
+		
+		if(mode != 3)
+			// phasing web page
+			doc = phaseDocument(url, sourceOfDocumentPage, sourceOfCommentsPage);
+	
+		return doc;
+	}
 	private Document phaseDocument(String url, WebSource sourceOfDocument, WebSource sourceOfComments){
 		// extract document
 		Document document = phaseBasicDocument(url, sourceOfDocument.getSource());

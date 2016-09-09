@@ -20,7 +20,7 @@ public class CommentDAO {
 	{
 		boolean success = false;
 		PreparedStatement pstmt = null;
-		String sql = "insert into comment (comment_ID, author, date, sentence, asociated_id, document_id) values(?, ?, ?, ?, ?, ?)";
+		String sql = "insert into comment (ID, author, date, sentence, asociated_id, document_id) values(?, ?, ?, ?, ?, ?)";
 
 		con = pool.getConnection();
 		if (con == null) {
@@ -56,7 +56,7 @@ public class CommentDAO {
 	{
 		boolean success = false;
 		PreparedStatement pstmt = null;
-		String sql = "insert into comment (comment_ID, author, date, sentence, asociated_id, document_id) values(?, ?, ?, ?, ?, ?)";
+		String sql = "insert into comment (ID, author, date, sentence, asociated_id, document_id) values(?, ?, ?, ?, ?, ?)";
 
 		con = pool.getConnection();
 		if (con == null) {

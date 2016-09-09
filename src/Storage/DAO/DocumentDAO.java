@@ -245,7 +245,7 @@ public class DocumentDAO {
 		
 		boolean success = false;
 		PreparedStatement pstmt = null;
-		String sql = "delete from document where ID=? and date=?";
+		String sql = "delete from document where ID=?";
 
 		con = pool.getConnection();
 		if (con == null) {
@@ -256,7 +256,6 @@ public class DocumentDAO {
 			pstmt = con.prepareStatement(sql);
 			
 			pstmt.setString(1, doc.getTitleNum() );
-			pstmt.setString(1, doc.getDate().toString() );
 
 			int count = pstmt.executeUpdate();		// 실행한 갯수만큼 count에 리턴
 			if( count > 0 )

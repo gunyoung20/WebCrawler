@@ -65,6 +65,40 @@ public class CrawlerForIlbe extends Crawler {
 	
 		return phaseSourcesOfWebPage(documentUrlListOfPage, documentList, mode);
 	}
+	public Document phaseSourceOfDocument(String url, int mode)
+	{
+		Document doc = null;
+
+		// split part of document
+		WebSource sourceOfDocumentPage = scraper.readWebSite(url, "Document", mode);
+					
+		// Extract Comment Page Size
+		String sourceOfCommentPageSection = sourceOfDocumentPage.getSource().substring(
+				sourceOfDocumentPage.getSource().indexOf("class=\"pagination") == -1 ? 0 : 
+					sourceOfDocumentPage.getSource().indexOf("class=\"pagination") + "class=\"pagination".length());
+		String comPageSection = "";
+		comPageSection = phaser.phase(sourceOfCommentPageSection, "</a>", "</div>", true);
+		
+		int comPageSize = 1;
+		if (comPageSection.contains("</strong>"))
+			comPageSize = Integer.valueOf(phaser.phase(comPageSection, "<strong>", "</strong>", true));
+
+		// Phase All Comments
+		ArrayList<WebSource> sourceOfComments = new ArrayList<WebSource>();
+		WebSource sourceOfCommentsPage;
+		for (int j = 0; j < comPageSize; j++) {
+			sourceOfCommentsPage = scraper.readWebSite(url + "&cpage=" + (j+1), "Comment", mode);
+			
+			// split parts of comments
+			sourceOfComments.add(sourceOfCommentsPage);
+		}
+		
+		if(mode != 3)
+			// phasing web page
+			doc = phaseDocument(url, sourceOfDocumentPage, sourceOfComments);
+	
+		return doc;
+	}
 	private boolean phaseSourcesOfWebPage(ArrayList<String> documentUrlListOfPage, ArrayList<Document> documentList, int mode)
 	{
 		// Bring web pages about each document
@@ -161,7 +195,7 @@ public class CrawlerForIlbe extends Crawler {
 						.substring(sourceOfDocument.indexOf("//") == -1 ? 0 : sourceOfDocument.indexOf("//") + 2),
 				"/", "\"", true, true);
 		// title phasing
-		title = phaser.phase(sourceOfDocument, "-->", "<!--", true, true);
+		title = phaser.phase(sourceOfDocument, "-->", "<!--", false, true);
 		// author phasing
 		author = phaser.phase(sourceOfDocument.substring(sourceOfDocument.indexOf("class=\"userInfo\"") == -1 ? 0
 				: sourceOfDocument.indexOf("class=\"userInfo\"")), "<span", "</span>", true, true);

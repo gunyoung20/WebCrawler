@@ -78,6 +78,16 @@ public class main {
 //		WebSourceDAO wsdao = new WebSourceDAO();
 //		System.out.println(wsdao.getSource("http://www.megalian.com/free/375666").getSource());
 				
+//		String u = "http://www.ilbe.com/index.php?_filter=search&mid=ilbe&search_target=title&search_keyword=%EB%A9%94%EA%B0%88&document_srl=6862497249";
+//		CrawlerForIlbe IlbeWeb = new CrawlerForIlbe();
+//		// mode-0 : web phasing with collecting web sources from web site on online.
+//		// mode-1 : only phasing web sources without collecting web sources from web site on online.
+//		// mode-2 : only phasing web sources without collecting web sources from offline such as file, DB.
+//		// mode-3 : only collecting web sources from online.
+//		Document document = IlbeWeb.phaseSourceOfDocument(u, 2);
+//		DocumentDAO ddao = new DocumentDAO();
+//		if(!ddao.update(document))
+//			ddao.insert(document);
 		System.out.println("Complete End Process!!");
 	}
 

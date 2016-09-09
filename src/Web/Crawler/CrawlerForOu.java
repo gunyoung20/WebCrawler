@@ -112,6 +112,26 @@ public class CrawlerForOu extends Crawler {
 			System.out.println("----------------- Todayhumor Documents About " + scraper.getTarget() + " Collect Complete ----------------------");
 		return true;
 	}
+	public Document phaseSourceOfDocument(String url, int mode)
+	{
+		Document doc = null;
+
+		// split part of document
+		WebSource sourceOfDocumentPage = scraper.readWebSite(url, "Document", mode);
+
+		// Phase All Comments
+		String table, tableId, memoUrl;
+		table = url.substring(url.indexOf("table=")+"table=".length(), url.indexOf("&no="));
+		tableId = url.substring(url.indexOf("&no=")+"&no=".length(), url.indexOf("&s_no="));
+		memoUrl = "http://www.todayhumor.co.kr/board/ajax_memo_list.php?parent_table=" + table + "&parent_id="+ tableId +"&last_memo_no=0";
+		WebSource sourceOfCommentsPage = scraper.readWebSite(memoUrl, "Comment", mode);
+		
+		if(mode != 3)
+			// phasing web page
+			doc = phaseDocument(url, sourceOfDocumentPage, sourceOfCommentsPage);
+	
+		return doc;
+	}
 	private Document phaseDocument(String url, WebSource sourceOfDocument, WebSource sourceOfComments){
 
 		// extract document
