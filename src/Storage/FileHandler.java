@@ -256,7 +256,7 @@ public class FileHandler {
 	
 	private void writeFile(String dir, String fileName, ArrayList<ArrayList<String>> recordList)
 	{
-		if(recordList.size()  == 0)
+		if(recordList == null)
 		{
 			System.err.println(dir + "/" + fileName + " Data is Not found For Writing file(void writeFile(String dir, String fileName, ArrayList<ArrayList<String>> recordList))");
 			return;

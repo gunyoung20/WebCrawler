@@ -13,7 +13,15 @@ public class CrawlerForMegal extends Crawler{
 
 	public CrawlerForMegal(){ super("http://www.megalian.com/search/page/1?search=%EC%9D%BC%EB%B2%A0&sf=all"); }
 
+//	mode-0 : web phasing with collecting web sources from web site on online.
+//	mode-1 : only phasing web sources without collecting web sources from web site on online.
+//	mode-2 : only phasing web sources without collecting web sources from offline such as file, DB.
+//	mode-3 : only collecting web sources from online.
 	public ArrayList<Document> phaseWebSite(String target, int mode)
+	{
+		return phaseWebSite(target, 0, mode);
+	}
+	public ArrayList<Document> phaseWebSite(String target, int maxPage, int mode)
 	{
 		ArrayList<Document> documentList = new ArrayList<>();
 
@@ -26,8 +34,8 @@ public class CrawlerForMegal extends Crawler{
 			String nowPages = scraper.getPageToString();
 
 			WebSource tempOfWeb;
-//			while (!nowPages.equals("")) {
-			while (!nowPages.equals("11")) {
+			
+			while ((maxPage==0?true:!nowPages.equals(String.valueOf(maxPage+1))) && !nowPages.equals("")) {
 				scraper.setPage(nowPages);
 				// search next page number
 				tempOfWeb = scraper.readWebPage(mode);
@@ -75,7 +83,7 @@ public class CrawlerForMegal extends Crawler{
 			// split part of document
 			url = documentUrlListOfPage.get(i);
 			sourceOfDocumentPage = scraper.readWebSite(url, "Document", mode);
-			if(sourceOfDocumentPage.getSource().contains(scraper.DeletedDocumentCode))
+			if(scraper.checkErrorCode(sourceOfDocumentPage.getSource()))
 			{
 				System.err.println("Deleted Document!! - " + url);
 				documentUrlListOfPage.remove(i--);
@@ -101,7 +109,8 @@ public class CrawlerForMegal extends Crawler{
 				System.out.println("----------------- Megalian Pages About " + url + " Phase Start ----------------------");
 				// phasing web page
 				Document document = phaseDocument(url, sourceOfDocumentPage, sourceOfCommentsPage);
-				documentList.add(document);
+				if(document != null)
+					documentList.add(document);
 
 				System.out.println("----------------- Megalian Pages About " + url + " Phase Complete ----------------------");
 			}
@@ -135,6 +144,10 @@ public class CrawlerForMegal extends Crawler{
 	private Document phaseDocument(String url, WebSource sourceOfDocument, WebSource sourceOfComments){
 		// extract document
 		Document document = phaseBasicDocument(url, sourceOfDocument.getSource());
+		if(document == null)
+			return null;
+		WebSourceDAO wsdao = new WebSourceDAO();
+		document.setWebId(wsdao.getID(url, sourceOfDocument.getWebName(), sourceOfDocument.getTarget()));
 
 		// phasing comments
 		ArrayList<Comment> commentList = new ArrayList<Comment>();
@@ -205,23 +218,9 @@ public class CrawlerForMegal extends Crawler{
 		// date phasing
 		sourceOfDate = sourceOfComment.substring(sourceOfComment.indexOf("class=\\\"date\\\">") == -1 ?
 				0 : sourceOfComment.indexOf("class=\\\"date\\\">") + "class=\\\"date\\\">".length(), sourceOfComment.indexOf("</span>"));
-//		// Date
-//		comDate = phaser.phase(sourceOfDate, "class=date>", " ", true, true);
-//
-//		// Time
-//		comTime = phaser.phase(sourceOfDate, " ", "</span>", true, true);
 
 		// Date
 		Date cd = new Date(sourceOfDate);
-//		String[] tempCD = comDate.split("-");
-//		cd.setYear(Integer.parseInt(tempCD[0]));
-//		cd.setMonth(Integer.parseInt(tempCD[1]));
-//		cd.setDate(Integer.parseInt(tempCD[2]));
-//		// Time
-//		String[] tempCT = comTime.split(":");
-//		cd.setHours(Integer.parseInt(tempCT[0]));
-//		cd.setMinutes(Integer.parseInt(tempCT[1]));
-//		cd.setSeconds(Integer.parseInt(tempCT[2]));
 
 		// Comment Story
 		comStory = phaser.phase(sourceOfComment, "class=\\\"txt\\\">", "<!--", false, true);
@@ -251,6 +250,13 @@ public class CrawlerForMegal extends Crawler{
 				temp = scraper.getUrl() + temp.substring(temp.contains("//") ? 
 						temp.substring(temp.indexOf("//")+2).indexOf("/")
 						+ temp.substring(0, temp.indexOf("//")+2).length() : temp.indexOf("/"));
+
+				if(temp.contains("page"))
+				{
+					token = temp.substring(temp.indexOf("page"));
+					String digit = String.valueOf(phaser.searchDigit(token));
+					temp = temp.substring(0, temp.indexOf("page")) + token.substring(token.indexOf(digit)+digit.length());
+				}
 				phasedTokenList.add(temp);
 			}
 		}

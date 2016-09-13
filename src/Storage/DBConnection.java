@@ -25,10 +25,10 @@ public class DBConnection {
 		Connection con = null;
 		//String driverName = "org.gjt.mm.mysql.Driver";
 		String driverName = "com.mysql.jdbc.Driver";
-		String dbURL = "jdbc:mysql://localhost:8888/thewaroncyber";
+		String dbURL = "jdbc:mysql://192.168.0.4:8888/thewaroncyber";
 		try {
 			Class.forName(driverName);
-			con = DriverManager.getConnection(dbURL, "root", "ghosttim23");
+			con = DriverManager.getConnection(dbURL, "server_crawler", "b403");
 		} catch (Exception e) {
 			System.out.println(e.toString());
 		}

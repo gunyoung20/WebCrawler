@@ -21,7 +21,7 @@ public class DocumentDAO {
 	{
 		boolean success = false;
 		PreparedStatement pstmt = null;
-		String sql = "insert into document (ID, title, author, date, story, web_id) values(?, ?, ?, ?, ?, (select id from websource where url=? and source_name='Document'))";
+		String sql = "insert into document (ID, title, author, date, story, web_id) values(?, ?, ?, ?, ?, ?)";
 
 		con = pool.getConnection();
 		if (con == null) {
@@ -35,7 +35,7 @@ public class DocumentDAO {
 			pstmt.setString(3, doc.getAuthor() );
 			pstmt.setString(4, doc.getDate().toString() );
 			pstmt.setString(5, doc.getStory() );
-			pstmt.setString(6, doc.getWebUrl() );
+			pstmt.setString(6, doc.getWebID() );
 
 			int count = pstmt.executeUpdate();		// 실행한 갯수만큼 count에 리턴
 			if( count > 0 )
@@ -49,20 +49,20 @@ public class DocumentDAO {
 			pool.freeConnection(con, pstmt);
 		}
 		
-		CommentDAO cdao = new CommentDAO();
-		if(!cdao.insertList(doc.getTitleNum(), doc.getCommentList()))
+		if(success)
 		{
-			delete(doc);
-			return false;
+			CommentDAO cdao = new CommentDAO();
+			cdao.insertList(doc.getTitleNum(), doc.getCommentList());
 		}
 		
 		return success;
 	}
 	public boolean insertList(ArrayList<Document> docl)
 	{
+		ArrayList<Document> cdocl = new ArrayList<Document>();
 		boolean success = false;
 		PreparedStatement pstmt = null;
-		String sql = "insert into document (ID, title, author, date, story, web_id) values(?, ?, ?, ?, ?, (select id from websource where url=? and source_name='Document'))";
+		String sql = "insert into document (ID, title, author, date, story, web_id) values(?, ?, ?, ?, ?, ?)";
 
 		con = pool.getConnection();
 		if (con == null) {
@@ -80,13 +80,15 @@ public class DocumentDAO {
 				pstmt.setString(3, doc.getAuthor() );
 				pstmt.setString(4, doc.getDate().toString() );
 				pstmt.setString(5, doc.getStory() );
-				pstmt.setString(6, doc.getWebUrl() );
+				pstmt.setString(6, doc.getWebID() );
 
 				int count = pstmt.executeUpdate();		// 실행한 갯수만큼 count에 리턴
 				if( count > 0 )
 					success = true;
 				if(pstmt != null)
 					pstmt.close();
+				
+				cdocl.add(doc);
 			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -98,12 +100,12 @@ public class DocumentDAO {
 
 		Document doc;
 		CommentDAO cdao = new CommentDAO();
-		for(int i = 0; i < docl.size(); i++)
+		for(int i = 0; i < cdocl.size(); i++)
 		{
-			doc = docl.get(i);
+			doc = cdocl.get(i);
 			if (!cdao.insertList(doc.getTitleNum(), doc.getCommentList())) 
 			{
-				for (int j = 0; j < docl.size(); j++)
+				for (int j = 0; j <= i; j++)
 				{
 					cdao.deleteAll(docl.get(j).getTitleNum());
 					delete(docl.get(j));
@@ -122,8 +124,8 @@ public class DocumentDAO {
 	public boolean update(Document doc, Document mdoc) {
 		boolean success = false;
 		PreparedStatement pstmt = null;
-		String sql = "update document set title=?, author=?, date=?, story=?, web_id=(select id from websource where url=? and source_name='Document') "
-				+ "where document_ID=?";
+		String sql = "update document set title=?, author=?, date=?, story=?, web_id=? "
+				+ "where ID=?";
 
 		con = pool.getConnection();
 		if (con == null) {
@@ -137,7 +139,7 @@ public class DocumentDAO {
 			pstmt.setString(2, mdoc.getAuthor() );
 			pstmt.setString(3, mdoc.getDate().toString() );
 			pstmt.setString(4, mdoc.getStory() );
-			pstmt.setString(5, mdoc.getWebUrl() );
+			pstmt.setString(5, mdoc.getWebID() );
 			
 			pstmt.setString(6, doc.getTitleNum() );
 
@@ -150,9 +152,11 @@ public class DocumentDAO {
 		} finally {
 			pool.freeConnection(con, pstmt);
 		}
-		
-		CommentDAO cdao = new CommentDAO();
-		cdao.updateAll(mdoc.getTitleNum(), mdoc.getCommentList());
+		if(success)
+		{
+			CommentDAO cdao = new CommentDAO();
+			cdao.updateAll(mdoc.getTitleNum(), mdoc.getCommentList());
+		}
 		
 		return success;
 	}
@@ -161,7 +165,7 @@ public class DocumentDAO {
 
 		for(int i = 0; i < docl.size(); i++)
 			if(!update(docl.get(i)))
-				return insert(docl.get(i));
+				insert(docl.get(i));
 
 		return success;
 	}
@@ -170,7 +174,7 @@ public class DocumentDAO {
 		Document doc = null;
 		ResultSet rs = null;
 		PreparedStatement pstmt = null;
-		String SQL = "select url, document.ID, title, author, document.date, story from document join websource where document.id=?";
+		String SQL = "select ID, title, author, date, story, web_id from document where ID=?";
 
 		con = pool.getConnection();
 		if (con == null) {
@@ -183,7 +187,7 @@ public class DocumentDAO {
 			rs = pstmt.executeQuery();
 
 			rs.next(); 
-			doc = new Document(rs.getString("url"), rs.getString("ID"), rs.getString("title")
+			doc = new Document(rs.getString("web_id"), rs.getString("ID"), rs.getString("title")
 						, rs.getString("author"), rs.getString("date"), rs.getString("story"));
 
 			rs.close();
@@ -203,7 +207,7 @@ public class DocumentDAO {
 		ArrayList<Document> list = new ArrayList<Document>();
 		ResultSet rs = null;
 		PreparedStatement pstmt = null;
-		String SQL = "select url, document.ID, title, author, document.date, story from document join websource";
+		String SQL = "select ID, title, author, date, story, web_id from document";
 
 		con = pool.getConnection();
 		if (con == null) {
@@ -216,7 +220,7 @@ public class DocumentDAO {
 
 			CommentDAO cdao = new CommentDAO();
 			while (rs.next()) {
-				Document doc = new Document(rs.getString("url"), rs.getString("ID"), rs.getString("title")
+				Document doc = new Document(rs.getString("web_id"), rs.getString("ID"), rs.getString("title")
 						, rs.getString("author"), rs.getString("date"), rs.getString("story"));
 
 				doc.setCommentList(cdao.getAllList(doc.getTitleNum()));
@@ -240,6 +244,7 @@ public class DocumentDAO {
 		if(!cdao.deleteAll(doc.getTitleNum()))
 		{
 			System.err.println("Could not delete Comment - if(!cdao.deleteAll(doc.getTitleNum()))");
+			System.err.println("Document ID : " + doc.getTitleNum());
 			return false;
 		}
 		
@@ -277,7 +282,7 @@ public class DocumentDAO {
 		CommentDAO cdao = new CommentDAO();
 		if(!cdao.deleteAll())
 		{
-			System.err.println("Could not delete Comment - if(!cdao.deleteAll(doc.getTitleNum()))");
+			System.err.println("Could not delete Comment - if(!cdao.deleteAll())");
 			return false;
 		}
 		boolean success = false;

@@ -15,18 +15,25 @@ public class Phaser {
 	public String phase(String source, String startSplit, String endSplit, boolean doFilter, boolean doExtractText) {
 		String temp = "";
 
-		if (source.contains(endSplit)) {
-			if (source.contains(startSplit)) {
-				temp = source.substring(source.indexOf(startSplit) + startSplit.length());
-				temp = temp.substring(0, temp.indexOf(endSplit));
-			} else
-				temp = source.substring(0, source.indexOf(endSplit));
-			if (doFilter)
-				temp = removeTag(temp);
-			if (doExtractText)
-				temp = extractText(temp);
-		} else
-			temp = "";
+		try{
+			if (source.contains(endSplit)) {
+				if (source.contains(startSplit)) {
+					temp = source.substring(source.indexOf(startSplit) + startSplit.length());
+					temp = temp.substring(0, temp.indexOf(endSplit));
+				} else
+					temp = source.substring(0, source.indexOf(endSplit));
+				if (doFilter)
+					temp = removeTag(temp);
+				if (doExtractText)
+					temp = extractText(temp);
+			} 
+		}
+		catch(Exception e){
+			System.err.println("Split : " + startSplit + ", " + endSplit + " Filter : " + doFilter + " Extract : " + doExtractText);
+			System.err.println("Source : " + source);
+			System.err.println("Temp : " + temp);
+			e.printStackTrace();
+		}
 		return storyFilter(temp);
 	}
 	public ArrayList<String> phase(String source, String subStartSplit, String subEndSplit, String mainSplit) {
@@ -68,19 +75,21 @@ public class Phaser {
 		return phaseSourcesOfComments(source, subStartSplit, subEndSplit, mainSplit, doFilter, false);
 	}
 	public ArrayList<String> phaseSourcesOfComments(String source, String subStartSplit, String subEndSplit, String mainSplit, boolean doFilter, boolean doExtractText) {
-		String temp = source.substring(source.indexOf(mainSplit));
+		String temp = source.substring(source.indexOf(mainSplit)+mainSplit.length());
+		int commentEndIndex;
 		ArrayList<String> sourcesOfComments = new ArrayList<>();
 		while(temp.contains(subEndSplit) && temp.contains(subStartSplit))
 		{
 			temp = temp.substring(temp.indexOf(subStartSplit)+subStartSplit.length());
-			String sourceOfComments = temp.substring(0, temp.indexOf(subEndSplit));
+			commentEndIndex = temp.indexOf(subEndSplit);
+			String sourceOfComments = temp.substring(0, commentEndIndex);
 			if(doFilter)
 				sourceOfComments = removeTag(sourceOfComments);
 			if(doExtractText)
 				sourceOfComments = extractText(sourceOfComments);
 			
 			sourcesOfComments.add(sourceOfComments);
-			temp = temp.substring(temp.indexOf(subEndSplit) + subEndSplit.length());
+			temp = temp.substring(commentEndIndex + subEndSplit.length());
 		}
 		
 		return sourcesOfComments;

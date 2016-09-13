@@ -11,25 +11,28 @@ public class main {
 //		targetList.put(Megal, "megalian");
 //		targetList.put(Today, "todayhumor");
 //		String dir = "D:/정우영/JAVA/WebCrawler/WebSource/Document";
+//		DocumentDAO ddao = new DocumentDAO();
 		// 일간 베스트
 //		CrawlerForIlbe IlbeWeb = new CrawlerForIlbe();
 ////		mode-0 : web phasing with collecting web sources from web site on online.
 ////		mode-1 : only phasing web sources without collecting web sources from web site on online.
 ////		mode-2 : only phasing web sources without collecting web sources from offline such as file, DB.
 ////		mode-3 : only collecting web sources from online.
-//		ArrayList<Document> documentsFromIlbe = IlbeWeb.phaseWebSite(targetList.get(Megal), 2);
+//		ArrayList<Document> documentsFromIlbe = IlbeWeb.phaseWebSite(targetList.get(Megal), 0);
 //		FileHandler dfhForIlbe = new FileHandler(dir + "/" + targetList.get(Ilbe), targetList.get(Megal), ".doc");
 //		dfhForIlbe.saveDocumentList(documentsFromIlbe);
+//		ddao.updateAll(documentsFromIlbe);
 
-		// 오늘의 유머
+//		 오늘의 유머
 //		CrawlerForOu OuWeb = new CrawlerForOu();
 ////		mode-0 : web phasing with collecting web sources from web site on online.
 ////		mode-1 : only phasing web sources without collecting web sources from web site on online.
 ////		mode-2 : only phasing web sources without collecting web sources from offline such as file, DB.
 ////		mode-3 : only collecting web sources from online.
-//		ArrayList<Document> documentsFromOu = OuWeb.phaseWebSite(targetList.get(Megal), 2);
+//		ArrayList<Document> documentsFromOu = OuWeb.phaseWebSite(targetList.get(Megal), 0);
 //		FileHandler dfhForOu = new FileHandler(dir + "/" + targetList.get(Today), targetList.get(Ilbe), ".doc");
 //		dfhForOu.saveDocumentList(documentsFromOu);
+//		ddao.updateAll(documentsFromOu);
 		
 		// 메갈리안
 //		CrawlerForMegal MegalWeb = new CrawlerForMegal();
@@ -37,9 +40,10 @@ public class main {
 ////		mode-1 : only phasing web sources without collecting web sources from web site on online.
 ////		mode-2 : only phasing web sources without collecting web sources from offline such as file, DB.
 ////		mode-3 : only collecting web sources from online.
-//		ArrayList<Document> documentsFromMegal = MegalWeb.phaseWebSite(targetList.get(Ilbe), 2);
+//		ArrayList<Document> documentsFromMegal = MegalWeb.phaseWebSite(targetList.get(Ilbe), 0);
 //		FileHandler dfhForMegal = new FileHandler(dir + "/" + targetList.get(Megal), targetList.get(Ilbe), ".doc");
 //		dfhForMegal.saveDocumentList(documentsFromMegal);
+//		ddao.updateAll(documentsFromMegal);
 
 //		FileHandler dfh = new FileHandler("D:/정우영/JAVA/WebPhasing/FileData/Ilbe", "Megal", ".doc");
 //		ArrayList<Document> dlist = dfh.loadDocumentList();
@@ -68,11 +72,18 @@ public class main {
 				Runtime.getRuntime().availableProcessors());
 		for(int i = 0; i < objects.length; i++)
 			for(int j = 0; j < target[i].length; j++)
+			{
 //				mode-0 : web phasing with collecting web sources from web site on online.
 //				mode-1 : only phasing web sources without collecting web sources from web site on online.
 //				mode-2 : only phasing web sources without collecting web sources from offline such as file, DB.
 //				mode-3 : only collecting web sources from online.
-				es.execute(new ThreadMaker(objects[i], target[i][j], 2));
+				es.execute(new ThreadMaker(objects[i], target[i][j], 10, 0));
+//				Future future = es.submit(new ThreadMaker(objects[i], target[i][j], 2));
+//				try{
+//					future.get();
+//					System.out.println(objects[i] + " page complete to " + target[i][j]);
+//				}catch(Exception e)	{ e.printStackTrace(); }
+			}
 		es.shutdown();
 		
 //		WebSourceDAO wsdao = new WebSourceDAO();
@@ -88,6 +99,10 @@ public class main {
 //		DocumentDAO ddao = new DocumentDAO();
 //		if(!ddao.update(document))
 //			ddao.insert(document);
+		
+//		DocumentDAO ddao = new DocumentDAO();
+//		ddao.delete(new Document("53194", "threadEntry375400", "", "", "", ""));
+		
 		System.out.println("Complete End Process!!");
 	}
 

@@ -1,11 +1,12 @@
 package Data;
 
 import java.util.ArrayList;
-import Data.Date;
+
+import Storage.DAO.WebSourceDAO;
 
 public class Document {
 
-	private String webUrl;
+	private String webId;
 	private String titleNum;
 	private String title;
 	private String author;
@@ -20,14 +21,14 @@ public class Document {
 	private double sentimentScore;
 
 	public Document(){ this("", "", "", "", "", ""); }
-	public Document(String webUrl, String titleNum, String title, String author, String date, String story)	{
-		this(webUrl, titleNum, title, author, date.equals("")?null:new Date(date), story);	}
-	public Document(String webUrl, String titleNum, String title, String author, Date date, String story)	{
-		this.webUrl = webUrl; this.titleNum = titleNum; this.title = title; this.author = author; 
+	public Document(String webId, String titleNum, String title, String author, String date, String story)	{
+		this(webId, titleNum, title, author, date.equals("")?null:new Date(date), story);	}
+	public Document(String webId, String titleNum, String title, String author, Date date, String story)	{
+		this.webId = webId; this.titleNum = titleNum; this.title = title; this.author = author; 
 		this.date = date; this.story = story;
 	}
 
-	public void setWebUrl(String wu){ webUrl = wu; }
+	public void setWebId(String wi){ webId = wi; }
 	public void setTitleNum(String tn){ titleNum = tn; }
 	public void setTitle(String t){ title = t; }
 	public void setAuthor(String a){ author = a; }
@@ -44,7 +45,8 @@ public class Document {
 	
 	public void setSentimentScore(double score){ sentimentScore = score; }
 	
-	public String getWebUrl(){ return webUrl; }
+	public String getWebUrl(){ return (new WebSourceDAO()).get(webId).getWebUrl(); }
+	public String getWebID(){ return webId; }
 	public String getTitleNum(){ return titleNum; }
 	public String getTitle(){ return title; }
 	public String getAuthor(){ return author; }

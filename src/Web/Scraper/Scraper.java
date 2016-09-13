@@ -19,9 +19,9 @@ public class Scraper {
 		target = t; 
 		nowTimeForCollect = new SimpleDateFormat("YYYY-MM-dd HHmmss").format(Calendar.getInstance().getTime());
 		targetList = new HashMap<String, String>();
-		targetList.put("Ilbe", "%EC%9D%BC%EB%B2%A0");
-		targetList.put("Megal", "%EB%A9%94%EA%B0%88");
-		targetList.put("Ou", "%EC%98%A4%EC%9C%A0");
+		targetList.put("ilbe", "%EC%9D%BC%EB%B2%A0");
+		targetList.put("megalian", "%EB%A9%94%EA%B0%88");
+		targetList.put("todayhumor", "%EC%98%A4%EC%9C%A0");
 		}
 	// URL이 지정하는 Page를 모두 String으로 저장
 	//mode-0 : web phasing with collecting web sources from web site on online.
@@ -59,7 +59,7 @@ public class Scraper {
 		WebSourceDAO wsdao = new WebSourceDAO();
 		WebSource source = null;
 		if(mode == 2)		
-			source = wsdao.getSource(u);
+			source = wsdao.getSource(u, getWebName(), target, sName);
 		else
 		{
 			Phaser phaser = new Phaser();
@@ -111,14 +111,8 @@ public class Scraper {
 			}
 			sleep(300);
 			buffer = dfh.readWebFile(dir, fileName);
-			if(buffer==null)
+			if(checkErrorCode(buffer))
 			{
-				System.err.println("Access Error(No have data in file) path : " + dir + " target : " + fileName);
-				continue;
-			}
-			if(buffer.contains(WebAccessErrorCode) || buffer.contains(WebAccessDeniedCode))
-			{
-				System.out.println(buffer);
 				System.err.println("Access Error path : " + dir + " target : " + fileName);
 				continue;
 			}
@@ -126,6 +120,24 @@ public class Scraper {
 		}
 		
 		return buffer;
+	}
+	public boolean checkErrorCode(String source)
+	{
+		String[] ErrorCode = {WebAccessDeniedCode, WebAccessErrorCode, DeletedDocumentCode, BlindedDocumentCode};
+		if(source==null)
+		{
+			System.err.println("Access Error(No have data in file)");
+			return true;
+		}
+		
+		for(int i = 0; i < ErrorCode.length; i++)
+			if(source.contains(ErrorCode[i]))
+			{
+				System.err.println("Access Error Source : " + source);
+				return true;
+			}
+		
+		return false;
 	}
 	
 	protected void sleep(int time) {
@@ -161,6 +173,7 @@ public class Scraper {
 	public final String WebAccessDeniedCode= "Do not Accessed Website";
 	public final String WebAccessErrorCode = "비정상적인 검색입니다.";
 	public final String DeletedDocumentCode = "삭제된 글입니다.";
+	public final String BlindedDocumentCode = "현재 블라인드 상태인 게시물입니다.";
 
 	public String getSearchUrl() { return searchUrl; }
 	public void setSearchUrl(String searchUrl) { 

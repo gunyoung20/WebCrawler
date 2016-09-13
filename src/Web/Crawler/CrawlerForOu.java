@@ -19,6 +19,10 @@ public class CrawlerForOu extends Crawler {
 //	mode-3 : only collecting web sources from online.
 	public ArrayList<Document> phaseWebSite(String target, int mode)
 	{
+		return phaseWebSite(target, 0, mode);
+	}
+	public ArrayList<Document> phaseWebSite(String target, int maxPage, int mode)
+	{
 		ArrayList<Document> documentList = new ArrayList<>();
 
 		scraper = new ScraperForOu(scraper.getSearchUrl(), target);
@@ -29,8 +33,8 @@ public class CrawlerForOu extends Crawler {
 			// Phase web sites from each web addresses
 			String nowPages = scraper.getPageToString();
 			WebSource tempOfWeb;
-//			while(!nowPages.contains("단축키"))
-			while(!nowPages.equals("11"))
+			
+			while((maxPage==0?true:!nowPages.equals(String.valueOf(maxPage+1))) && !nowPages.contains("단축키"))
 			{
 				scraper.setPage(nowPages);
 				// search next page number
@@ -101,7 +105,8 @@ public class CrawlerForOu extends Crawler {
 				System.out.println("----------------- Todayhumor Pages About " + url + " Phase Start ----------------------");
 				// phasing web page
 				Document document = phaseDocument(url, sourceOfDocumentPage, sourceOfCommentsPage);
-				documentList.add(document);
+				if(document != null)
+					documentList.add(document);
 				
 				System.out.println("----------------- Todayhumor Pages About " + url + " Phase Complete ----------------------");
 			}
@@ -118,6 +123,8 @@ public class CrawlerForOu extends Crawler {
 
 		// split part of document
 		WebSource sourceOfDocumentPage = scraper.readWebSite(url, "Document", mode);
+		if(scraper.checkErrorCode(sourceOfDocumentPage.getSource()))
+			return null;
 
 		// Phase All Comments
 		String table, tableId, memoUrl;
@@ -136,10 +143,20 @@ public class CrawlerForOu extends Crawler {
 
 		// extract document
 		Document document = phaseBasicDocument(url, sourceOfDocument.getSource());
+		if(document == null)
+			return null;
+		WebSourceDAO wsdao = new WebSourceDAO();
+		String webId;
+		if((webId = wsdao.getID(url, sourceOfDocument.getWebName(), sourceOfDocument.getTarget())) == null)
+		{
+			System.err.println("Could not get a websource ID!!");
+			return null;
+		}
+		document.setWebId(webId);
 
 		// phasing comments
 		ArrayList<Comment> commentList = new ArrayList<Comment>();
-		ArrayList<String> sourceList = phaser.phaseSourcesOfComments(sourceOfComments.getSource(), "{", "}", "[");
+		ArrayList<String> sourceList = phaser.phaseSourcesOfComments(sourceOfComments.getSource(), "{", "is_writer_member_no", "[");
 		for (int i = 0; i < sourceList.size(); i++) {
 			Comment comment = phaseComment(sourceList.get(i));
 			comment.setID(document.getTitleNum() + "-" + comment.getID());
@@ -152,6 +169,8 @@ public class CrawlerForOu extends Crawler {
 	}
 	private Document phaseBasicDocument(String url, String sourceOfDocument)
 	{
+		if(scraper.checkErrorCode(sourceOfDocument))
+			return null;
 		// extract document
 		String ID, title, author, date, time, story, sourceOfDate;
 
@@ -251,6 +270,13 @@ public class CrawlerForOu extends Crawler {
 				temp = scraper.getUrl() + temp.substring(temp.contains("//") ? 
 						temp.substring(temp.indexOf("//")+2).indexOf("/")
 						+ temp.substring(0, temp.indexOf("//")+2).length() : temp.indexOf("/"));
+				
+				if(temp.contains("page"))
+				{
+					token = temp.substring(temp.indexOf("page"));
+					String digit = String.valueOf(phaser.searchDigit(token));
+					temp = temp.substring(0, temp.indexOf("page")) + token.substring(token.indexOf(digit)+digit.length());
+				}
 				phasedTokenList.add(temp);
 			}
 		}

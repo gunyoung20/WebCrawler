@@ -13,7 +13,15 @@ public class CrawlerForIlbe extends Crawler {
 	public CrawlerForIlbe(){ 
 		super("http://www.ilbe.com/?_filter=search&mid=ilbe&search_target=title&search_keyword="); }
 
+//	mode-0 : web phasing with collecting web sources from web site on online.
+//	mode-1 : only phasing web sources without collecting web sources from web site on online.
+//	mode-2 : only phasing web sources without collecting web sources from offline such as file, DB.
+//	mode-3 : only collecting web sources from online.
 	public ArrayList<Document> phaseWebSite(String target, int mode)
+	{
+		return phaseWebSite(target, 0, mode);
+	}
+	public ArrayList<Document> phaseWebSite(String target, int maxPage, int mode)
 	{
 		ArrayList<Document> documentList = new ArrayList<>();
 
@@ -27,8 +35,7 @@ public class CrawlerForIlbe extends Crawler {
 
 			WebSource tempOfWeb;
 
-//			while (!nowPages.contains("다음")) {
-			while (!nowPages.equals("11")) {
+			while ((maxPage==0?true:!nowPages.equals(String.valueOf(maxPage+1))) && !nowPages.contains("다음")) {
 				scraper.setPage(nowPages);
 				// search next page nowPages
 				tempOfWeb = scraper.readWebPage(mode);
@@ -50,10 +57,10 @@ public class CrawlerForIlbe extends Crawler {
 			ArrayList<String> urlList = wsdao.getUrlList(scraper.getWebName(), target, "Document");
 			
 			System.out.println("URL : " + scraper.getSearchUrl());
-			System.out.println("----------------- Megalian About " + target + " Phase Start ----------------------");
+			System.out.println("----------------- Ilbe About " + target + " Phase Start ----------------------");
 			// collect sources of web pages and split sector between documents and each comments
 			phaseSourcesOfWebPage(urlList, documentList, mode);
-			System.out.println("----------------- Megalian About " + target + " Phase Complete ----------------------");			
+			System.out.println("----------------- Ilbe About " + target + " Phase Complete ----------------------");			
 		}
 		
 		return documentList;
@@ -106,7 +113,7 @@ public class CrawlerForIlbe extends Crawler {
 			String url = documentUrlListOfPage.get(i);
 			// split part of document
 			WebSource sourceOfDocumentPage = scraper.readWebSite(url, "Document", mode);
-			if(sourceOfDocumentPage.getSource().contains(scraper.DeletedDocumentCode))
+			if(scraper.checkErrorCode(sourceOfDocumentPage.getSource()))
 			{
 				System.err.println("Deleted Document!! - " + url);
 				documentUrlListOfPage.remove(i--);
@@ -147,7 +154,8 @@ public class CrawlerForIlbe extends Crawler {
 				System.out.println("----------------- Ilbe Pages About \"" + url + "\" Phase Start ----------------------");
 				// phasing web page
 				Document document = phaseDocument(url, sourceOfDocumentPage, sourceOfComments);
-				documentList.add(document);
+				if(document != null)
+					documentList.add(document);
 				
 				System.out.println("----------------- Ilbe Pages About \"" + url + "\" Phase Complete ----------------------");
 			}
@@ -164,6 +172,10 @@ public class CrawlerForIlbe extends Crawler {
 										: sourcesOfDocument.getSource().indexOf("<div class=\"title\">") + "<div class=\"title\">".length())
 										, "<div class=\"title\">", "<div class=\"tRight\">", false);
 		Document document = phaseBasicDocument(url, sourceOfDocument);
+		if(document == null)
+			return null;
+		WebSourceDAO wsdao = new WebSourceDAO();
+		document.setWebId(wsdao.getID(url, sourcesOfDocument.getWebName(), sourcesOfDocument.getTarget()));
 		// phasing comments
 		ArrayList<Comment> commentList = new ArrayList<Comment>();
 		for(int i = 0; i < sourcesOfCommentsList.size(); i++)
@@ -286,6 +298,13 @@ public class CrawlerForIlbe extends Crawler {
 				temp = scraper.getUrl() + temp.substring(temp.contains("//") ? 
 						temp.substring(temp.indexOf("//")+2).indexOf("/")
 						+ temp.substring(0, temp.indexOf("//")+2).length() : temp.indexOf("/"));
+
+				if(temp.contains("page"))
+				{
+					token = temp.substring(temp.indexOf("page"));
+					String digit = String.valueOf(phaser.searchDigit(token));
+					temp = temp.substring(0, temp.indexOf("page")) + token.substring(token.indexOf(digit)+digit.length());
+				}
 				phasedTokenList.add(temp);
 			}
 		}

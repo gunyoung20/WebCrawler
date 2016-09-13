@@ -54,6 +54,7 @@ public class CommentDAO {
 	}
 	public boolean insertList(String docId, ArrayList<Comment> coml)
 	{
+		ArrayList<Comment> ccoml = new ArrayList<Comment>();
 		boolean success = false;
 		PreparedStatement pstmt = null;
 		String sql = "insert into comment (ID, author, date, sentence, asociated_id, document_id) values(?, ?, ?, ?, ?, ?)";
@@ -82,11 +83,17 @@ public class CommentDAO {
 					success = true;
 				if(pstmt != null)
 					pstmt.close();
+				
+				ccoml.add(com);
 			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return success;
+			
+			for(int i = 0; i < ccoml.size(); i++)
+				delete(ccoml.get(i));
+			
+			return false;
 		} finally {
 			pool.freeConnection(con, pstmt);
 		}
@@ -100,7 +107,7 @@ public class CommentDAO {
 	public boolean update(Comment com, Comment mcom) {
 		boolean success = false;
 		PreparedStatement pstmt = null;
-		String sql = "update comment set author=?, date=?, sentence=?, asociated_id=? where comment_ID=?";
+		String sql = "update comment set author=?, date=?, sentence=?, asociated_id=? where ID=?";
 
 		con = pool.getConnection();
 		if (con == null) {
@@ -128,12 +135,45 @@ public class CommentDAO {
 		}
 		return success;
 	}
+	public boolean update(Comment com, String docId, Comment mcom) {
+		boolean success = false;
+		PreparedStatement pstmt = null;
+		String sql = "update comment set ID=?, author=?, date=?, sentence=?, asociated_id=?, docId=? where ID=?";
+
+		con = pool.getConnection();
+		if (con == null) {
+			System.out.println("연결이 이루어지지 않았다");
+			return false;
+		}
+		try {
+			pstmt = con.prepareStatement(sql);
+			// 인자로 받은 GuestBook 객체를 이용해 사용자가 수정한 값을 가져와 SQL문 완성
+			pstmt.setString(1, mcom.getID() );
+			pstmt.setString(2, mcom.getAuthor() );
+			pstmt.setString(3, mcom.getDate().toString() );
+			pstmt.setString(4, mcom.getSentence() );
+			pstmt.setString(5, mcom.getAsociatedComment() );
+			pstmt.setString(6, docId );
+			
+			pstmt.setString(7, com.getID() );
+
+			int count = pstmt.executeUpdate();		// 실행한 갯수만큼 count에 리턴
+			if( count > 0 )
+				success = true;
+		} catch (SQLException e) {
+//			e.printStackTrace();
+			return success;
+		} finally {
+			pool.freeConnection(con, pstmt);
+		}
+		return success;
+	}
 	public boolean updateAll(String docId, ArrayList<Comment> coml) {
 		boolean success = false;
 
 		for(int i = 0; i < coml.size(); i++)
 			if(!update(coml.get(i)))
-				return insert(docId, coml.get(i));
+				insert(docId, coml.get(i));
 
 		return success;
 	}
@@ -232,7 +272,7 @@ public class CommentDAO {
 	{
 		boolean success = false;
 		PreparedStatement pstmt = null;
-		String sql = "delete from comment where comment_ID=? and document_ID=?";
+		String sql = "delete from comment where ID=? and document_ID=?";
 
 		con = pool.getConnection();
 		if (con == null) {
@@ -262,7 +302,7 @@ public class CommentDAO {
 	{
 		boolean success = false;
 		PreparedStatement pstmt = null;
-		String sql = "delete from comment where comment_ID=? and date=?";
+		String sql = "delete from comment where ID=?";
 
 		con = pool.getConnection();
 		if (con == null) {
@@ -273,7 +313,6 @@ public class CommentDAO {
 			pstmt = con.prepareStatement(sql);
 			
 			pstmt.setString(1, com.getID() );
-			pstmt.setString(2, com.getDate().toString() );
 
 			int count = pstmt.executeUpdate();		// 실행한 갯수만큼 count에 리턴
 			if( count > 0 )

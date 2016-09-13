@@ -73,6 +73,7 @@ public class WebSourceDAO {
 		}
 		try {
 			String u, dir, fileName;
+			FileHandler fh = new FileHandler();
 			for(int i = 0; i < wsl.size(); i++)
 			{
 				pstmt = con.prepareStatement(sql);
@@ -95,7 +96,6 @@ public class WebSourceDAO {
 				if( count > 0 )
 				{
 					success = true;
-					FileHandler fh = new FileHandler();
 					fh.writeWebFile(dir, fileName, ws.getSource());
 				}
 				if(pstmt != null)
@@ -115,7 +115,7 @@ public class WebSourceDAO {
 	{
 		boolean success = false;
 		PreparedStatement pstmt = null;
-		String sql = "delete from websource where url=? and source_name=?";
+		String sql = "delete from websource where url=? and dir=? and source_name=?";
 
 		con = pool.getConnection();
 		if (con == null) {
@@ -126,7 +126,8 @@ public class WebSourceDAO {
 			pstmt = con.prepareStatement(sql);
 			
 			pstmt.setString(1, ws.getUrl() );
-			pstmt.setString(2, ws.getSourceName() );
+			pstmt.setString(2, this.dir + ws.getWebName() + "/" + ws.getTarget() + "/" + ws.getSourceName() );
+			pstmt.setString(3, ws.getSourceName() );
 
 			int count = pstmt.executeUpdate();		// 실행한 갯수만큼 count에 리턴
 			if( count > 0 )
@@ -289,14 +290,17 @@ public class WebSourceDAO {
 		boolean success = false;
 		PreparedStatement pstmt = null;	
 		
-		ws = getSource(ws.getUrl());
+		ws = getSource(ws.getUrl(), ws.getWebName(), ws.getTarget(), ws.getSourceName());
 		if(ws==null)
 			return false;
 
-		if(!mws.getSource().equals(ws.getSource()) || !ws.getUrl().equals(mws.getUrl()))
+		if(mws.getSource().equals(ws.getSource()) && mws.getUrl().equals(ws.getUrl()))
+			return true;
+		else
 		{
+			String dir = this.dir + mws.getWebName() + "/" + mws.getTarget() + "/" + ws.getSourceName();
 			String sql = "update websource set url=?, web_url=?, web_name=?, target=?, date=?, dir=?, source_name=? "
-					+ "where url=? and source_name=?";
+					+ "where url=? and web_name=? and target=? and source_name=?";
 
 			con = pool.getConnection();
 			if (con == null) {
@@ -311,11 +315,13 @@ public class WebSourceDAO {
 				pstmt.setString(3, mws.getWebName());
 				pstmt.setString(4, mws.getTarget());
 				pstmt.setString(5, mws.getDate().toString());
-				pstmt.setString(6, mws.getSource());
+				pstmt.setString(6, dir);
 				pstmt.setString(7, mws.getSourceName());
 
 				pstmt.setString(8, ws.getUrl());
-				pstmt.setString(9, ws.getSourceName());
+				pstmt.setString(9, ws.getWebName());
+				pstmt.setString(10, ws.getTarget());
+				pstmt.setString(11, ws.getSourceName());
 
 				int count = pstmt.executeUpdate(); // 실행한 갯수만큼 count에 리턴
 				if (count > 0)
@@ -326,14 +332,13 @@ public class WebSourceDAO {
 				pool.freeConnection(con, pstmt);
 			}
 			FileHandler fh = new FileHandler();
-			
-			String u = ws.getUrl();
-			String dir = this.dir + ws.getWebName() + "/" + ws.getTarget() + "/" + ws.getSourceName();
-			String fileName = getFileName(u);
+
+			String fileName = getFileName(ws.getUrl());
 			
 			fh.fileDelete(dir, fileName, "txt");
+
+			fileName = getFileName(mws.getUrl());
 			
-			dir = this.dir + mws.getWebName() + "/" + mws.getTarget() + "/" + mws.getSourceName();
 			fh.writeWebFile(dir, fileName, mws.getSource());
 		}
 		return success;
@@ -343,11 +348,43 @@ public class WebSourceDAO {
 
 		for(int i = 0; i < wsl.size(); i++)
 			if(!update(wsl.get(i)))
-				return insert(wsl.get(i));
+				insert(wsl.get(i));
 
 		return success;
 	}
-	
+	public String getID(String url, String webName, String target)
+	{
+		String id = "";
+		ResultSet rs = null;
+		PreparedStatement pstmt = null;
+		String SQL = "select id from websource where url=? and web_name=? and target=? and source_name='Document'";
+
+		con = pool.getConnection();
+		if (con == null) {
+			System.out.println("연결이 이루어지지 않았다");
+			return null;
+		}
+		try {
+			pstmt = con.prepareStatement(SQL);
+			pstmt.setString(1, url);
+			pstmt.setString(2, webName);
+			pstmt.setString(3, target);
+			rs = pstmt.executeQuery();
+
+			rs.next();
+
+			id = rs.getString("id");
+
+			rs.close();
+		} catch (SQLException e) {
+//			e.printStackTrace();
+			return null;
+		} finally {
+			pool.freeConnection(con, pstmt, rs);
+		}
+		
+		return id;
+	}
 	public WebSource get(String id){
 		WebSource ws = null;
 		ResultSet rs = null;
@@ -386,11 +423,12 @@ public class WebSourceDAO {
 		}
 		return ws;
 	}
-	public WebSource getSource(String url){
+	public WebSource getSource(String url, String webName, String target, String sourceName){
 		WebSource ws = null;
+		String dir, fileName;
 		ResultSet rs = null;
 		PreparedStatement pstmt = null;
-		String SQL = "select * from websource where url=?";
+		String SQL = "select * from websource where url=? and web_name=? and target=? and source_name=?";
 
 		con = pool.getConnection();
 		if (con == null) {
@@ -400,6 +438,9 @@ public class WebSourceDAO {
 		try {
 			pstmt = con.prepareStatement(SQL);
 			pstmt.setString(1, url);
+			pstmt.setString(2, webName);
+			pstmt.setString(3, target);
+			pstmt.setString(4, sourceName);
 			rs = pstmt.executeQuery();
 
 			rs.next();
@@ -407,12 +448,8 @@ public class WebSourceDAO {
 			ws = new WebSource(url, rs.getString("web_url"), rs.getString("web_name")
 					, rs.getString("target"), rs.getString("date"), rs.getString("source_name"));
 			
-			String dir = rs.getString("dir");
-			String fileName = getFileName(url);
-			FileHandler fh = new FileHandler();
-			String source = fh.readWebFile(dir, fileName);
-			
-			ws.setSource(source);
+			dir = rs.getString("dir");
+			fileName = getFileName(url);
 
 			rs.close();
 		} catch (SQLException e) {
@@ -421,6 +458,10 @@ public class WebSourceDAO {
 		} finally {
 			pool.freeConnection(con, pstmt, rs);
 		}
+		FileHandler fh = new FileHandler();
+		String source = fh.readWebFile(dir, fileName);
+		
+		ws.setSource(source);
 		
 		return ws;
 	}
@@ -695,6 +736,35 @@ public class WebSourceDAO {
 			pool.freeConnection(con, pstmt, rs);
 		}
 		return list;
+	}
+	
+	public int size()
+	{
+		int cnt = 0;
+		ResultSet rs = null;
+		PreparedStatement pstmt = null;
+		String SQL = "select count(*) from websource";
+
+		con = pool.getConnection();
+		if (con == null) {
+			System.out.println("연결이 이루어지지 않았다");
+			return -1;
+		}
+		try {
+			pstmt = con.prepareStatement(SQL);
+			rs = pstmt.executeQuery();
+
+			rs.next();
+			// 리스트에 추가
+			cnt = Integer.valueOf(rs.getString(1));
+			
+			rs.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			pool.freeConnection(con, pstmt, rs);
+		}
+		return cnt;
 	}
 	
 	private String getFileName(String u)
